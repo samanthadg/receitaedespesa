@@ -40,15 +40,3 @@ systemctl enable --now lancamento
 echo "[4/4] Status do serviço:"
 systemctl status lancamento --no-pager || true
 
-cat <<EOF
-
-OK.
-
-Acesse:
-  http://IP_PUBLICO_DA_VM:8080/lancamentos
-
-Logs:
-  journalctl -u lancamento -f
-
-EOF
-

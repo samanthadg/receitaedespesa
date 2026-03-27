@@ -117,26 +117,3 @@ ufw --force enable || true
 
 echo "[8/8] Concluído."
 
-cat <<EOF
-
-Provisionamento concluído.
-
-Próximos passos:
-1) Copie o projeto para a VM (ex.: scp -r . ubuntu@SEU_IP:${APP_DIR})
-2) Compile (como ubuntu):
-   cd ${APP_DIR}/app
-   mvn -DskipTests package
-
-3) Inicie como serviço (recomendado):
-   sudo systemctl enable --now lancamento
-   sudo systemctl status lancamento --no-pager
-
-Ou rode via Docker (se preferir):
-   cd ${APP_DIR}
-   docker compose up -d --build
-
-Depois acesse:
-  http://SEU_IP_PUBLICO:8080/lancamentos
-
-EOF
-
