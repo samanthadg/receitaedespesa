@@ -41,6 +41,22 @@
         margin-bottom: 12px;
         box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
       }
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: end;
+        padding: 14px;
+        border-bottom: 1px solid #edf1f5;
+        background: #fff;
+      }
+      .toolbar .filters {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr auto auto;
+        gap: 12px;
+        align-items: end;
+        width: 100%;
+      }
       .form-grid {
         display: grid;
         grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
@@ -197,6 +213,9 @@
         .form-grid {
           grid-template-columns: 1fr;
         }
+        .toolbar .filters {
+          grid-template-columns: 1fr;
+        }
         th:nth-child(1),
         td:nth-child(1) {
           display: none;
@@ -256,15 +275,53 @@
       </div>
 
       <div class="card">
+        <div class="toolbar">
+          <form method="get" action="/lancamentos" class="filters">
+            <div class="field">
+              <label for="dataDe">Data (de)</label>
+              <input id="dataDe" name="dataDe" type="date" th:value="${dataDe}" />
+            </div>
+            <div class="field">
+              <label for="dataAte">Data (até)</label>
+              <input id="dataAte" name="dataAte" type="date" th:value="${dataAte}" />
+            </div>
+            <div class="field">
+              <label for="situacaoFiltro">Situação</label>
+              <select id="situacaoFiltro" name="situacao">
+                <option value="" th:selected="${situacao == ''}">Todas</option>
+                <option th:each="s : ${situacoes}" th:value="${s.name()}" th:text="${s.name()}" th:selected="${situacao == s.name()}">
+                  EFETIVADO
+                </option>
+              </select>
+            </div>
+
+            <input type="hidden" name="campo" th:value="${campo}" />
+            <input type="hidden" name="direcao" th:value="${direcao}" />
+
+            <div class="field">
+              <label>&nbsp;</label>
+              <button class="linkbtn" type="submit">Filtrar</button>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <a class="linkbtn" th:href="@{/lancamentos/export/pdf(campo=${campo},direcao=${direcao},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">
+                Exportar PDF
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
         <table>
           <thead>
             <tr>
-              <th><a th:href="@{/lancamentos(campo='id',direcao=${campo == 'id' and direcao == 'asc' ? 'desc' : 'asc'})}">ID</a></th>
-              <th><a th:href="@{/lancamentos(campo='descricao',direcao=${campo == 'descricao' and direcao == 'asc' ? 'desc' : 'asc'})}">Descrição</a></th>
-              <th><a th:href="@{/lancamentos(campo='dataLancamento',direcao=${campo == 'dataLancamento' and direcao == 'asc' ? 'desc' : 'asc'})}">Data</a></th>
-              <th><a th:href="@{/lancamentos(campo='valor',direcao=${campo == 'valor' and direcao == 'asc' ? 'desc' : 'asc'})}">Valor</a></th>
-              <th><a th:href="@{/lancamentos(campo='tipoLancamento',direcao=${campo == 'tipoLancamento' and direcao == 'asc' ? 'desc' : 'asc'})}">Tipo</a></th>
-              <th><a th:href="@{/lancamentos(campo='situacao',direcao=${campo == 'situacao' and direcao == 'asc' ? 'desc' : 'asc'})}">Situação</a></th>
+              <th><a th:href="@{/lancamentos(campo='id',direcao=${campo == 'id' and direcao == 'asc' ? 'desc' : 'asc'},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">ID</a></th>
+              <th><a th:href="@{/lancamentos(campo='descricao',direcao=${campo == 'descricao' and direcao == 'asc' ? 'desc' : 'asc'},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">Descrição</a></th>
+              <th><a th:href="@{/lancamentos(campo='dataLancamento',direcao=${campo == 'dataLancamento' and direcao == 'asc' ? 'desc' : 'asc'},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">Data</a></th>
+              <th><a th:href="@{/lancamentos(campo='valor',direcao=${campo == 'valor' and direcao == 'asc' ? 'desc' : 'asc'},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">Valor</a></th>
+              <th><a th:href="@{/lancamentos(campo='tipoLancamento',direcao=${campo == 'tipoLancamento' and direcao == 'asc' ? 'desc' : 'asc'},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">Tipo</a></th>
+              <th><a th:href="@{/lancamentos(campo='situacao',direcao=${campo == 'situacao' and direcao == 'asc' ? 'desc' : 'asc'},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">Situação</a></th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -285,6 +342,7 @@
                 </span>
               </td>
               <td>
+                <a class="linkbtn" th:href="@{'/lancamentos/' + ${l.id} + '/editar'}">Editar</a>
                 <form th:action="@{'/lancamentos/' + ${l.id} + '/excluir'}" method="post">
                   <button class="btn-danger" type="submit">Excluir</button>
                 </form>
@@ -295,7 +353,10 @@
       </div>
 
       <footer>
-        <div>Para sair, use o botão ao lado.</div>
+        <div>
+          <a class="linkbtn" href="/usuarios">Usuários</a>
+          <span class="muted" style="margin-left: 8px">Para sair, use o botão ao lado.</span>
+        </div>
         <form method="post" action="/logout">
           <button class="linkbtn" type="submit">Sair</button>
         </form>

@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editar lançamento</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        background: #eef2f6;
+        color: #22303c;
+      }
+      .wrap {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 0 16px 44px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        margin-bottom: 14px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.1px;
+      }
+      .subtitle {
+        color: #5b6977;
+        font-size: 13px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #d3dce6;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+        gap: 12px;
+        padding: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 12px;
+        color: #52606d;
+        margin-bottom: 4px;
+      }
+      .field input,
+      .field select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #c7d2de;
+        border-radius: 6px;
+        padding: 8px 9px;
+        font-size: 13px;
+        background: #fff;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        padding: 0 14px 14px;
+        align-items: center;
+      }
+      .btn-primary {
+        border: 1px solid #14579b;
+        background: #1b67b1;
+        color: #fff;
+        border-radius: 6px;
+        padding: 8px 11px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .linkbtn {
+        border: 1px solid #d7dde4;
+        background: #fff;
+        color: #1f2a37;
+        border-radius: 6px;
+        padding: 8px 11px;
+        font-size: 13px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+      }
+      .btn-primary:hover {
+        background: #155a9b;
+      }
+      .linkbtn:hover {
+        background: #f7f9fb;
+      }
+      @media (max-width: 760px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Editar lançamento</h1>
+          <div class="subtitle" th:text="${'ID ' + lancamento.id}">ID</div>
+        </div>
+        <a class="linkbtn" href="/lancamentos">Voltar</a>
+      </header>
+
+      <div class="card">
+        <form method="post" th:action="@{'/lancamentos/' + ${lancamento.id}}">
+          <div class="grid">
+            <div class="field">
+              <label for="descricao">Descrição</label>
+              <input id="descricao" name="descricao" required th:value="${lancamento.descricao}" />
+            </div>
+            <div class="field">
+              <label for="dataLancamento">Data</label>
+              <input
+                id="dataLancamento"
+                name="dataLancamento"
+                type="date"
+                required
+                th:value="${lancamento.dataLancamento}"
+              />
+            </div>
+            <div class="field">
+              <label for="valor">Valor</label>
+              <input id="valor" name="valor" type="number" min="0.01" step="0.01" required th:value="${lancamento.valor}" />
+            </div>
+            <div class="field">
+              <label for="tipoLancamento">Tipo</label>
+              <select id="tipoLancamento" name="tipoLancamento">
+                <option value="RECEITA" th:selected="${lancamento.tipoLancamento.name() == 'RECEITA'}">RECEITA</option>
+                <option value="DESPESA" th:selected="${lancamento.tipoLancamento.name() == 'DESPESA'}">DESPESA</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="situacao">Situação</label>
+              <select id="situacao" name="situacao">
+                <option value="EFETIVADO" th:selected="${lancamento.situacao.name() == 'EFETIVADO'}">EFETIVADO</option>
+                <option value="PENDENTE" th:selected="${lancamento.situacao.name() == 'PENDENTE'}">PENDENTE</option>
+                <option value="CANCELADO" th:selected="${lancamento.situacao.name() == 'CANCELADO'}">CANCELADO</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn-primary" type="submit">Salvar</button>
+            <a class="linkbtn" href="/lancamentos">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+

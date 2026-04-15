@@ -34,6 +34,10 @@ public class AuthController {
       model.addAttribute("error", "Login ou senha inválidos.");
       return "auth/login";
     }
+    if (!"ATIVO".equalsIgnoreCase(user.getSituacao())) {
+      model.addAttribute("error", "Usuário inativo.");
+      return "auth/login";
+    }
     session.setAttribute(SESSION_USER, user.getLogin());
     return "redirect:/lancamentos";
   }

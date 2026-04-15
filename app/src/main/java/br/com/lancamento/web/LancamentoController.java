@@ -7,7 +7,11 @@ import br.com.lancamento.repo.LancamentoRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Set;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,14 +37,73 @@ public class LancamentoController {
   public String listar(
       @RequestParam(defaultValue = "dataLancamento") String campo,
       @RequestParam(defaultValue = "desc") String direcao,
+      @RequestParam(required = false) String dataDe,
+      @RequestParam(required = false) String dataAte,
+      @RequestParam(required = false) String situacao,
       Model model) {
     String campoOrdenacao = CAMPOS_ORDENACAO.contains(campo) ? campo : "dataLancamento";
     Sort.Direction direction = "asc".equalsIgnoreCase(direcao) ? Sort.Direction.ASC : Sort.Direction.DESC;
-    var lista = lancamentoRepository.findAll(Sort.by(direction, campoOrdenacao).and(Sort.by("id")));
+    Sort sort = Sort.by(direction, campoOrdenacao).and(Sort.by("id"));
+
+    LocalDate dtDe = parseDateOrNull(dataDe);
+    LocalDate dtAte = parseDateOrNull(dataAte);
+    Situacao sit = parseSituacaoOrNull(situacao);
+
+    Specification<Lancamento> spec = Specification.where(null);
+    if (dtDe != null) {
+      spec = spec.and((root, q, cb) -> cb.greaterThanOrEqualTo(root.get("dataLancamento"), dtDe));
+    }
+    if (dtAte != null) {
+      spec = spec.and((root, q, cb) -> cb.lessThanOrEqualTo(root.get("dataLancamento"), dtAte));
+    }
+    if (sit != null) {
+      spec = spec.and((root, q, cb) -> cb.equal(root.get("situacao"), sit));
+    }
+
+    var lista = lancamentoRepository.findAll(spec, sort);
     model.addAttribute("lancamentos", lista);
     model.addAttribute("campo", campoOrdenacao);
     model.addAttribute("direcao", direction.name().toLowerCase());
+    model.addAttribute("dataDe", dtDe == null ? "" : dtDe.toString());
+    model.addAttribute("dataAte", dtAte == null ? "" : dtAte.toString());
+    model.addAttribute("situacao", sit == null ? "" : sit.name());
+    model.addAttribute("situacoes", Situacao.values());
     return "lancamentos/lista";
+  }
+
+  @GetMapping("/export/pdf")
+  public ResponseEntity<byte[]> exportPdf(
+      @RequestParam(defaultValue = "dataLancamento") String campo,
+      @RequestParam(defaultValue = "desc") String direcao,
+      @RequestParam(required = false) String dataDe,
+      @RequestParam(required = false) String dataAte,
+      @RequestParam(required = false) String situacao) {
+    String campoOrdenacao = CAMPOS_ORDENACAO.contains(campo) ? campo : "dataLancamento";
+    Sort.Direction direction = "asc".equalsIgnoreCase(direcao) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, campoOrdenacao).and(Sort.by("id"));
+
+    LocalDate dtDe = parseDateOrNull(dataDe);
+    LocalDate dtAte = parseDateOrNull(dataAte);
+    Situacao sit = parseSituacaoOrNull(situacao);
+
+    Specification<Lancamento> spec = Specification.where(null);
+    if (dtDe != null) {
+      spec = spec.and((root, q, cb) -> cb.greaterThanOrEqualTo(root.get("dataLancamento"), dtDe));
+    }
+    if (dtAte != null) {
+      spec = spec.and((root, q, cb) -> cb.lessThanOrEqualTo(root.get("dataLancamento"), dtAte));
+    }
+    if (sit != null) {
+      spec = spec.and((root, q, cb) -> cb.equal(root.get("situacao"), sit));
+    }
+
+    var lista = lancamentoRepository.findAll(spec, sort);
+    byte[] pdf = LancamentoPdfExporter.export(lista, dtDe, dtAte, sit == null ? "" : sit.name());
+
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_PDF)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"lancamentos.pdf\"")
+        .body(pdf);
   }
 
   @PostMapping
@@ -75,6 +138,65 @@ public class LancamentoController {
       redirectAttributes.addFlashAttribute("erro", "Lançamento não encontrado.");
     }
     return "redirect:/lancamentos";
+  }
+
+  @GetMapping("/{id}/editar")
+  public String editar(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+    var lancamento = lancamentoRepository.findById(id).orElse(null);
+    if (lancamento == null) {
+      redirectAttributes.addFlashAttribute("erro", "Lançamento não encontrado.");
+      return "redirect:/lancamentos";
+    }
+    model.addAttribute("lancamento", lancamento);
+    return "lancamentos/editar";
+  }
+
+  @PostMapping("/{id}")
+  public String atualizar(
+      @PathVariable Long id,
+      @RequestParam String descricao,
+      @RequestParam String dataLancamento,
+      @RequestParam String valor,
+      @RequestParam String tipoLancamento,
+      @RequestParam String situacao,
+      RedirectAttributes redirectAttributes) {
+    var lancamento = lancamentoRepository.findById(id).orElse(null);
+    if (lancamento == null) {
+      redirectAttributes.addFlashAttribute("erro", "Lançamento não encontrado.");
+      return "redirect:/lancamentos";
+    }
+
+    try {
+      lancamento.setDescricao(descricao.trim());
+      lancamento.setDataLancamento(LocalDate.parse(dataLancamento));
+      lancamento.setValor(new BigDecimal(valor));
+      lancamento.setTipoLancamento(TipoLancamento.valueOf(tipoLancamento));
+      lancamento.setSituacao(Situacao.valueOf(situacao));
+      lancamentoRepository.save(lancamento);
+      redirectAttributes.addFlashAttribute("msg", "Lançamento atualizado.");
+      return "redirect:/lancamentos";
+    } catch (Exception e) {
+      redirectAttributes.addFlashAttribute("erro", "Não foi possível atualizar o lançamento.");
+      return "redirect:/lancamentos/" + id + "/editar";
+    }
+  }
+
+  private static LocalDate parseDateOrNull(String value) {
+    if (value == null || value.isBlank()) return null;
+    try {
+      return LocalDate.parse(value.trim());
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static Situacao parseSituacaoOrNull(String value) {
+    if (value == null || value.isBlank()) return null;
+    try {
+      return Situacao.valueOf(value.trim());
+    } catch (Exception e) {
+      return null;
+    }
   }
 }
 
