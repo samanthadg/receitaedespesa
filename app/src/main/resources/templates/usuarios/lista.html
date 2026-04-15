@@ -137,9 +137,9 @@
         color: #1e6b2b;
       }
       .tag.inativo {
-        border-color: #f0c2c2;
-        background: #fff2f2;
-        color: #8a1f1f;
+        border-color: #d7dde4;
+        background: #f3f4f6;
+        color: #334e68;
       }
       table {
         width: 100%;
@@ -319,6 +319,9 @@
           </div>
           <button class="btn-primary" type="button" onclick="openAddUserModal()">Adicionar usuário</button>
           <div class="subtitle" th:text="${#lists.size(usuarios)} + ' registro(s)'">0 registro(s)</div>
+          <form method="post" action="/logout">
+            <button class="linkbtn" type="submit">Sair</button>
+          </form>
         </div>
       </header>
 
@@ -416,12 +419,6 @@
         </table>
       </div>
 
-      <footer>
-        <div class="subtitle">Para sair, use o botão ao lado.</div>
-        <form method="post" action="/logout">
-          <button class="linkbtn" type="submit">Sair</button>
-        </form>
-      </footer>
     </div>
 
     <script>

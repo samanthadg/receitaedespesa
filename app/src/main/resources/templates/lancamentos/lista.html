@@ -211,6 +211,16 @@
         background: #fff8e6;
         color: #7a5a00;
       }
+      .tag.efetivado {
+        border-color: #b7e3c0;
+        background: #eef9f1;
+        color: #1e6b2b;
+      }
+      .tag.cancelado {
+        border-color: #d7dde4;
+        background: #f3f4f6;
+        color: #334e68;
+      }
       .valor {
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
@@ -422,6 +432,9 @@
           <div class="subtitle">
             <span class="muted" th:text="${#lists.size(lancamentos)} + ' registro(s)'">0 registro(s)</span>
           </div>
+          <form method="post" action="/logout">
+            <button class="linkbtn" type="submit">Sair</button>
+          </form>
         </div>
       </header>
 
@@ -564,12 +577,6 @@
         </table>
       </div>
 
-      <footer>
-        <div class="muted">Para sair, use o botão ao lado.</div>
-        <form method="post" action="/logout">
-          <button class="linkbtn" type="submit">Sair</button>
-        </form>
-      </footer>
     </div>
 
     <script>
