@@ -31,6 +31,7 @@ app:
     enabled: ${APP_MAIL_ENABLED:false}
     to: ${APP_MAIL_TO:}
     from: ${APP_MAIL_FROM:onboarding@resend.dev}
+  public-base-url: ${APP_PUBLIC_BASE_URL:}
   resend:
     api-key: ${RESEND_API_KEY:}
 

@@ -182,13 +182,14 @@ public class LancamentoController {
     }
 
     try {
+      Lancamento antes = shallowCopy(lancamento);
       lancamento.setDescricao(descricao.trim());
       lancamento.setDataLancamento(LocalDate.parse(dataLancamento));
       lancamento.setValor(new BigDecimal(valor));
       lancamento.setTipoLancamento(TipoLancamento.valueOf(tipoLancamento));
       lancamento.setSituacao(Situacao.valueOf(situacao));
       Lancamento saved = lancamentoRepository.save(lancamento);
-      lancamentoEmailService.onUpdate(saved, resolveToEmail(session));
+      lancamentoEmailService.onUpdate(antes, saved, resolveToEmail(session));
       redirectAttributes.addFlashAttribute("msg", "Lançamento atualizado.");
       return "redirect:/lancamentos";
     } catch (Exception e) {
@@ -237,6 +238,17 @@ public class LancamentoController {
     if (email == null) return null;
     email = email.trim();
     return email.isBlank() ? null : email;
+  }
+
+  private static Lancamento shallowCopy(Lancamento src) {
+    Lancamento copy = new Lancamento();
+    copy.setId(src.getId());
+    copy.setDescricao(src.getDescricao());
+    copy.setDataLancamento(src.getDataLancamento());
+    copy.setValor(src.getValor());
+    copy.setTipoLancamento(src.getTipoLancamento());
+    copy.setSituacao(src.getSituacao());
+    return copy;
   }
 }
 
