@@ -17,7 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/usuarios")
 public class UsuarioController {
-  private static final Set<String> CAMPOS_ORDENACAO = Set.of("id", "nome", "login", "situacao");
+  private static final Set<String> CAMPOS_ORDENACAO = Set.of("id", "nome", "login", "email", "situacao");
 
   private final UsuarioRepository usuarioRepository;
 
@@ -43,6 +43,7 @@ public class UsuarioController {
   public String adicionar(
       @RequestParam String nome,
       @RequestParam String login,
+      @RequestParam(required = false) String email,
       @RequestParam String senha,
       @RequestParam String situacao,
       RedirectAttributes redirectAttributes) {
@@ -56,6 +57,7 @@ public class UsuarioController {
       Usuario u = new Usuario();
       u.setNome(nome.trim());
       u.setLogin(loginNorm);
+      u.setEmail(normalizeEmail(email));
       u.setSenha(senha);
       u.setSituacao(situacao.trim());
       usuarioRepository.save(u);
@@ -82,6 +84,7 @@ public class UsuarioController {
       @PathVariable Long id,
       @RequestParam String nome,
       @RequestParam String login,
+      @RequestParam(required = false) String email,
       @RequestParam(required = false) String senha,
       @RequestParam String situacao,
       RedirectAttributes redirectAttributes) {
@@ -101,6 +104,7 @@ public class UsuarioController {
     try {
       usuario.setNome(nome.trim());
       usuario.setLogin(loginNorm);
+      usuario.setEmail(normalizeEmail(email));
       if (senha != null && !senha.isBlank()) {
         usuario.setSenha(senha);
       }
@@ -136,6 +140,12 @@ public class UsuarioController {
       redirectAttributes.addFlashAttribute("erro", "Não foi possível excluir o usuário.");
     }
     return "redirect:/usuarios";
+  }
+
+  private static String normalizeEmail(String email) {
+    if (email == null) return null;
+    String v = email.trim();
+    return v.isBlank() ? null : v;
   }
 }
 

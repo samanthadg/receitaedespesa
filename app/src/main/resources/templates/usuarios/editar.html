@@ -42,7 +42,7 @@
       }
       .grid {
         display: grid;
-        grid-template-columns: 2fr 1fr 1fr 1fr;
+        grid-template-columns: 2fr 1fr 1.6fr 1fr 1fr;
         gap: 12px;
         padding: 14px;
       }
@@ -127,6 +127,10 @@
             <div class="field">
               <label for="login">Login</label>
               <input id="login" name="login" required th:value="${usuario.login}" />
+            </div>
+            <div class="field">
+              <label for="email">E-mail</label>
+              <input id="email" name="email" type="email" th:value="${usuario.email}" placeholder="Ex.: maria@email.com" />
             </div>
             <div class="field">
               <label for="senha">Senha</label>

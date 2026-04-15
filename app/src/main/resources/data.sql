@@ -1,10 +1,11 @@
-INSERT INTO usuario (nome, login, senha, situacao)
-VALUES ('Operador Financeiro', 'financeiro', 'fin2026', 'ATIVO')
+INSERT INTO usuario (nome, login, senha, situacao, email)
+VALUES ('Operador Financeiro', 'financeiro', 'fin2026', 'ATIVO', NULL)
 ON CONFLICT (login)
 DO UPDATE SET
   nome = EXCLUDED.nome,
   senha = EXCLUDED.senha,
-  situacao = EXCLUDED.situacao;
+  situacao = EXCLUDED.situacao,
+  email = COALESCE(usuario.email, EXCLUDED.email);
 
 INSERT INTO lancamento (descricao, data_lancamento, valor, tipo_lancamento, situacao)
 SELECT 'Salário', DATE '2026-03-05', 5500.00, 'RECEITA', 'EFETIVADO'

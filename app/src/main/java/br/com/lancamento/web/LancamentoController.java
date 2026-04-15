@@ -3,8 +3,11 @@ package br.com.lancamento.web;
 import br.com.lancamento.domain.Lancamento;
 import br.com.lancamento.domain.Situacao;
 import br.com.lancamento.domain.TipoLancamento;
+import br.com.lancamento.domain.Usuario;
 import br.com.lancamento.repo.LancamentoRepository;
+import br.com.lancamento.repo.UsuarioRepository;
 import br.com.lancamento.service.LancamentoEmailService;
+import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -30,11 +33,15 @@ public class LancamentoController {
       Set.of("id", "descricao", "dataLancamento", "valor", "tipoLancamento", "situacao");
 
   private final LancamentoRepository lancamentoRepository;
+  private final UsuarioRepository usuarioRepository;
   private final LancamentoEmailService lancamentoEmailService;
 
   public LancamentoController(
-      LancamentoRepository lancamentoRepository, LancamentoEmailService lancamentoEmailService) {
+      LancamentoRepository lancamentoRepository,
+      UsuarioRepository usuarioRepository,
+      LancamentoEmailService lancamentoEmailService) {
     this.lancamentoRepository = lancamentoRepository;
+    this.usuarioRepository = usuarioRepository;
     this.lancamentoEmailService = lancamentoEmailService;
   }
 
@@ -118,6 +125,7 @@ public class LancamentoController {
       @RequestParam String valor,
       @RequestParam String tipoLancamento,
       @RequestParam String situacao,
+      HttpSession session,
       RedirectAttributes redirectAttributes) {
     try {
       Lancamento lancamento = new Lancamento();
@@ -127,7 +135,7 @@ public class LancamentoController {
       lancamento.setTipoLancamento(TipoLancamento.valueOf(tipoLancamento));
       lancamento.setSituacao(Situacao.valueOf(situacao));
       Lancamento saved = lancamentoRepository.save(lancamento);
-      lancamentoEmailService.onCreate(saved);
+      lancamentoEmailService.onCreate(saved, resolveToEmail(session));
       redirectAttributes.addFlashAttribute("msg", "Lançamento adicionado com sucesso.");
     } catch (Exception e) {
       redirectAttributes.addFlashAttribute("erro", "Não foi possível adicionar o lançamento.");
@@ -165,6 +173,7 @@ public class LancamentoController {
       @RequestParam String valor,
       @RequestParam String tipoLancamento,
       @RequestParam String situacao,
+      HttpSession session,
       RedirectAttributes redirectAttributes) {
     var lancamento = lancamentoRepository.findById(id).orElse(null);
     if (lancamento == null) {
@@ -179,7 +188,7 @@ public class LancamentoController {
       lancamento.setTipoLancamento(TipoLancamento.valueOf(tipoLancamento));
       lancamento.setSituacao(Situacao.valueOf(situacao));
       Lancamento saved = lancamentoRepository.save(lancamento);
-      lancamentoEmailService.onUpdate(saved);
+      lancamentoEmailService.onUpdate(saved, resolveToEmail(session));
       redirectAttributes.addFlashAttribute("msg", "Lançamento atualizado.");
       return "redirect:/lancamentos";
     } catch (Exception e) {
@@ -213,6 +222,21 @@ public class LancamentoController {
 
   private static boolean isSituacaoLancamento(Situacao s) {
     return s == Situacao.EFETIVADO || s == Situacao.PENDENTE || s == Situacao.CANCELADO;
+  }
+
+  private String resolveToEmail(HttpSession session) {
+    if (session == null) return null;
+    Object loginObj = session.getAttribute(AuthController.SESSION_USER);
+    if (loginObj == null) return null;
+    String login = loginObj.toString().trim();
+    if (login.isBlank()) return null;
+
+    Usuario u = usuarioRepository.findByLogin(login).orElse(null);
+    if (u == null) return null;
+    String email = u.getEmail();
+    if (email == null) return null;
+    email = email.trim();
+    return email.isBlank() ? null : email;
   }
 }
 

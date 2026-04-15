@@ -16,32 +16,34 @@ public class LancamentoEmailService {
   private static final DateTimeFormatter DATA_PT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
   private final boolean enabled;
-  private final String to;
+  private final String fallbackTo;
   private final String from;
   private final String apiKey;
 
   public LancamentoEmailService(
       @Value("${app.mail.enabled:false}") boolean enabled,
-      @Value("${app.mail.to:}") String to,
+      @Value("${app.mail.to:}") String fallbackTo,
       @Value("${app.mail.from:onboarding@resend.dev}") String from,
       @Value("${app.resend.api-key:}") String apiKey) {
     this.enabled = enabled;
-    this.to = to == null ? "" : to.trim();
+    this.fallbackTo = fallbackTo == null ? "" : fallbackTo.trim();
     this.from = from == null ? "" : from.trim();
     this.apiKey = apiKey == null ? "" : apiKey.trim();
   }
 
-  public void onCreate(Lancamento l) {
-    send("Lançamento criado", l);
+  public void onCreate(Lancamento l, String to) {
+    send("Lançamento criado", l, to);
   }
 
-  public void onUpdate(Lancamento l) {
-    send("Lançamento atualizado", l);
+  public void onUpdate(Lancamento l, String to) {
+    send("Lançamento atualizado", l, to);
   }
 
-  private void send(String prefix, Lancamento l) {
+  private void send(String prefix, Lancamento l, String toOverride) {
     if (!enabled) return;
-    if (to.isBlank()) return;
+    String to = normalizeEmail(toOverride);
+    if (to == null) to = normalizeEmail(fallbackTo);
+    if (to == null) return;
     if (apiKey.isBlank()) return;
     if (l == null) return;
 
@@ -94,6 +96,12 @@ public class LancamentoEmailService {
         .replace(">", "&gt;")
         .replace("\"", "&quot;")
         .replace("'", "&#39;");
+  }
+
+  private static String normalizeEmail(String email) {
+    if (email == null) return null;
+    String v = email.trim();
+    return v.isBlank() ? null : v;
   }
 }
 

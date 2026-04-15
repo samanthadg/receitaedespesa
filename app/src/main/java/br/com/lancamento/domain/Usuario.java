@@ -20,6 +20,9 @@ public class Usuario {
   @Column(nullable = false, unique = true, length = 60)
   private String login;
 
+  @Column(length = 160)
+  private String email;
+
   @Column(nullable = false, length = 255)
   private String senha;
 
@@ -48,6 +51,14 @@ public class Usuario {
 
   public void setLogin(String login) {
     this.login = login;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
   }
 
   public String getSenha() {

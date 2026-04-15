@@ -57,7 +57,7 @@
       }
       .form-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr 1fr 1fr;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
         gap: 12px;
         padding: 14px;
       }
@@ -289,7 +289,7 @@
       }
 
       #addUserForm.form-grid {
-        grid-template-columns: 2.2fr 1fr 1fr 1fr;
+        grid-template-columns: 2.2fr 1.4fr 2fr 1fr 1fr;
         gap: 14px;
         padding: 16px 16px 10px;
       }
@@ -350,6 +350,10 @@
                 <input id="loginNovo" name="login" required placeholder="Ex.: maria" />
               </div>
               <div class="field">
+                <label for="emailNovo">E-mail</label>
+                <input id="emailNovo" name="email" type="email" placeholder="Ex.: maria@email.com" />
+              </div>
+              <div class="field">
                 <label for="senhaNovo">Senha</label>
                 <input id="senhaNovo" name="senha" type="password" required />
               </div>
@@ -380,6 +384,7 @@
               <th><a th:href="@{/usuarios(campo='id',direcao=${campo == 'id' and direcao == 'asc' ? 'desc' : 'asc'})}">ID</a></th>
               <th><a th:href="@{/usuarios(campo='nome',direcao=${campo == 'nome' and direcao == 'asc' ? 'desc' : 'asc'})}">Nome</a></th>
               <th><a th:href="@{/usuarios(campo='login',direcao=${campo == 'login' and direcao == 'asc' ? 'desc' : 'asc'})}">Login</a></th>
+              <th><a th:href="@{/usuarios(campo='email',direcao=${campo == 'email' and direcao == 'asc' ? 'desc' : 'asc'})}">E-mail</a></th>
               <th><a th:href="@{/usuarios(campo='situacao',direcao=${campo == 'situacao' and direcao == 'asc' ? 'desc' : 'asc'})}">Situação</a></th>
               <th>Ações</th>
             </tr>
@@ -389,6 +394,7 @@
               <td th:text="${u.id}">1</td>
               <td th:text="${u.nome}">Nome</td>
               <td th:text="${u.login}">login</td>
+              <td th:text="${u.email}">email</td>
               <td>
                 <span
                   class="tag"
