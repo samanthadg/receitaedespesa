@@ -110,6 +110,36 @@
         align-items: center;
         justify-content: center;
         line-height: 1.2;
+        font-weight: 600;
+      }
+
+      .linkbtn.edit {
+        border-color: rgba(27, 103, 177, 0.35);
+        background: rgba(27, 103, 177, 0.08);
+        color: #155a9b;
+      }
+      .linkbtn.edit:hover {
+        background: rgba(27, 103, 177, 0.12);
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #d7dde4;
+        background: #fff;
+        font-size: 13px;
+        color: #334e68;
+      }
+      .tag.ativo {
+        border-color: #b7e3c0;
+        background: #eef9f1;
+        color: #1e6b2b;
+      }
+      .tag.inativo {
+        border-color: #f0c2c2;
+        background: #fff2f2;
+        color: #8a1f1f;
       }
       table {
         width: 100%;
@@ -250,7 +280,6 @@
         <div class="header-actions">
           <div class="nav">
             <a class="linkbtn" href="/lancamentos">Lançamentos</a>
-            <a class="linkbtn" href="/usuarios" aria-current="page">Usuários</a>
           </div>
           <button class="btn-primary" type="button" onclick="openAddUserModal()">Adicionar usuário</button>
           <div class="subtitle" th:text="${#lists.size(usuarios)} + ' registro(s)'">0 registro(s)</div>
@@ -316,10 +345,17 @@
               <td th:text="${u.id}">1</td>
               <td th:text="${u.nome}">Nome</td>
               <td th:text="${u.login}">login</td>
-              <td th:text="${u.situacao}">ATIVO</td>
+              <td>
+                <span
+                  class="tag"
+                  th:classappend="${u.situacao != null ? ' ' + u.situacao.toLowerCase() : ''}"
+                  th:text="${u.situacao}">
+                  ATIVO
+                </span>
+              </td>
               <td>
                 <div class="actions">
-                  <a class="linkbtn" th:href="@{'/usuarios/' + ${u.id} + '/editar'}">Editar</a>
+                  <a class="linkbtn edit" th:href="@{'/usuarios/' + ${u.id} + '/editar'}">Editar</a>
                   <form th:action="@{'/usuarios/' + ${u.id} + '/excluir'}" method="post">
                     <button class="btn-danger" type="submit">Excluir</button>
                   </form>

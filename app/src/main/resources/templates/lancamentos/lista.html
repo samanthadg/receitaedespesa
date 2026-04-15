@@ -258,9 +258,18 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        font-weight: 600;
       }
       .linkbtn:hover {
         background: #f7f9fb;
+      }
+      .linkbtn.edit {
+        border-color: rgba(27, 103, 177, 0.35);
+        background: rgba(27, 103, 177, 0.08);
+        color: var(--primary-700);
+      }
+      .linkbtn.edit:hover {
+        background: rgba(27, 103, 177, 0.12);
       }
       .linkbtn.primary {
         border-color: #14579b;
@@ -364,7 +373,6 @@
         </div>
         <div class="header-actions">
           <div class="nav">
-            <a class="linkbtn" href="/lancamentos" aria-current="page">Lançamentos</a>
             <a class="linkbtn" href="/usuarios">Usuários</a>
           </div>
           <button class="btn-primary" type="button" onclick="openAddModal()">Adicionar lançamento</button>
@@ -494,7 +502,7 @@
               </td>
               <td>
                 <div class="actions">
-                  <a class="linkbtn" th:href="@{'/lancamentos/' + ${l.id} + '/editar'}">Editar</a>
+                  <a class="linkbtn edit" th:href="@{'/lancamentos/' + ${l.id} + '/editar'}">Editar</a>
                   <form th:action="@{'/lancamentos/' + ${l.id} + '/excluir'}" method="post">
                     <button class="btn-danger" type="submit">Excluir</button>
                   </form>
