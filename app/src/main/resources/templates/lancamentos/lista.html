@@ -5,11 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lançamentos</title>
     <style>
+      :root {
+        --bg: #f3f6fb;
+        --card: #ffffff;
+        --text: #1f2a37;
+        --muted: #5b6977;
+        --border: #dde6f0;
+        --shadow: 0 10px 26px rgba(16, 24, 40, 0.08);
+        --shadow-sm: 0 4px 14px rgba(16, 24, 40, 0.06);
+        --primary: #1b67b1;
+        --primary-700: #155a9b;
+        --primary-50: rgba(27, 103, 177, 0.12);
+        --danger: #8a1f1f;
+      }
       body {
         margin: 0;
         font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-        background: #eef2f6;
-        color: #22303c;
+        background: radial-gradient(1200px 700px at 10% -10%, rgba(27, 103, 177, 0.14), transparent 55%),
+          radial-gradient(1000px 650px at 110% 0%, rgba(14, 165, 233, 0.12), transparent 52%),
+          var(--bg);
+        color: var(--text);
       }
       .wrap {
         max-width: 1100px;
@@ -23,6 +38,11 @@
         align-items: center;
         margin-bottom: 14px;
       }
+      .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
       h1 {
         margin: 0;
         font-size: 20px;
@@ -30,16 +50,16 @@
         letter-spacing: 0.1px;
       }
       .subtitle {
-        color: #5b6977;
+        color: var(--muted);
         font-size: 13px;
       }
       .card {
-        background: #fff;
-        border: 1px solid #d3dce6;
+        background: var(--card);
+        border: 1px solid var(--border);
         border-radius: 8px;
         overflow: hidden;
         margin-bottom: 12px;
-        box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+        box-shadow: var(--shadow-sm);
       }
       .toolbar {
         display: flex;
@@ -48,7 +68,7 @@
         align-items: end;
         padding: 14px;
         border-bottom: 1px solid #edf1f5;
-        background: #fff;
+        background: linear-gradient(180deg, #ffffff, #fbfdff);
       }
       .toolbar .filters {
         display: grid;
@@ -84,11 +104,11 @@
       .field select:focus {
         outline: none;
         border-color: #2f6fad;
-        box-shadow: 0 0 0 3px rgba(47, 111, 173, 0.14);
+        box-shadow: 0 0 0 3px var(--primary-50);
       }
       .btn-primary {
         border: 1px solid #14579b;
-        background: #1b67b1;
+        background: var(--primary);
         color: #fff;
         border-radius: 6px;
         padding: 8px 11px;
@@ -99,17 +119,30 @@
       .btn-danger {
         border: 1px solid #e0b3b3;
         background: #fff6f6;
-        color: #8a1f1f;
+        color: var(--danger);
         border-radius: 6px;
         padding: 6px 9px;
         font-size: 12px;
         cursor: pointer;
       }
       .btn-primary:hover {
-        background: #155a9b;
+        background: var(--primary-700);
       }
       .btn-danger:hover {
         background: #ffecec;
+      }
+      .btn-secondary {
+        border: 1px solid #d7dde4;
+        background: #fff;
+        color: #1f2a37;
+        border-radius: 6px;
+        padding: 8px 11px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-secondary:hover {
+        background: #f7f9fb;
       }
       table {
         width: 100%;
@@ -123,8 +156,8 @@
         font-size: 13px;
       }
       th {
-        background: #f6f9fc;
-        color: #365067;
+        background: linear-gradient(180deg, #f7faff, #f3f7fd);
+        color: #2f4860;
         font-weight: 600;
         border-bottom: 1px solid #dfe7ef;
       }
@@ -136,7 +169,10 @@
         text-decoration: underline;
       }
       tbody tr:hover {
-        background: #fafcff;
+        background: #f7fbff;
+      }
+      tbody tr:nth-child(even) {
+        background: #fcfdff;
       }
       .tag {
         display: inline-block;
@@ -200,7 +236,7 @@
       .linkbtn {
         border: 1px solid #d7dde4;
         background: #fff;
-        color: #1f2a37;
+        color: var(--text);
         border-radius: 6px;
         padding: 6px 10px;
         font-size: 12px;
@@ -208,6 +244,15 @@
       }
       .linkbtn:hover {
         background: #f7f9fb;
+      }
+      .linkbtn.primary {
+        border-color: #14579b;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 600;
+      }
+      .linkbtn.primary:hover {
+        background: var(--primary-700);
       }
       @media (max-width: 700px) {
         .form-grid {
@@ -221,6 +266,55 @@
           display: none;
         }
       }
+
+      dialog {
+        border: none;
+        border-radius: 10px;
+        padding: 0;
+        width: min(720px, calc(100vw - 24px));
+        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.28);
+      }
+      dialog::backdrop {
+        background: rgba(15, 23, 42, 0.55);
+      }
+      .modal {
+        background: #fff;
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid #edf1f5;
+      }
+      .modal-title {
+        font-weight: 700;
+        font-size: 14px;
+        color: #1f2a37;
+      }
+      .modal-close {
+        border: 1px solid #d7dde4;
+        background: #fff;
+        color: #1f2a37;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        background: #f7f9fb;
+      }
+      .modal-body {
+        padding: 0;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: end;
+        gap: 10px;
+        padding: 12px 14px 14px;
+        border-top: 1px solid #edf1f5;
+      }
     </style>
   </head>
   <body>
@@ -230,49 +324,64 @@
           <h1>Listagem de lançamentos</h1>
           <div class="subtitle">Despesas e receitas cadastradas no banco</div>
         </div>
-        <div class="subtitle">
-          <span class="muted" th:text="${#lists.size(lancamentos)} + ' registro(s)'">0 registro(s)</span>
+        <div class="header-actions">
+          <button class="btn-primary" type="button" onclick="openAddModal()">Adicionar lançamento</button>
+          <div class="subtitle">
+            <span class="muted" th:text="${#lists.size(lancamentos)} + ' registro(s)'">0 registro(s)</span>
+          </div>
         </div>
       </header>
 
       <div th:if="${msg}" class="alert ok" th:text="${msg}">Operação realizada.</div>
       <div th:if="${erro}" class="alert err" th:text="${erro}">Erro.</div>
 
-      <div class="card">
-        <form method="post" action="/lancamentos" class="form-grid">
-          <div class="field">
-            <label for="descricao">Descrição</label>
-            <input id="descricao" name="descricao" required />
+      <dialog id="addModal" aria-labelledby="addModalTitle">
+        <div class="modal">
+          <div class="modal-header">
+            <div id="addModalTitle" class="modal-title">Novo lançamento</div>
+            <button class="modal-close" type="button" onclick="closeAddModal()">Fechar</button>
           </div>
-          <div class="field">
-            <label for="dataLancamento">Data</label>
-            <input id="dataLancamento" name="dataLancamento" type="date" required />
+          <div class="modal-body">
+            <form id="addForm" method="post" action="/lancamentos" class="form-grid" style="padding-bottom: 8px">
+              <div class="field">
+                <label for="descricaoNovo">Descrição</label>
+                <input id="descricaoNovo" name="descricao" required placeholder="Ex.: Aluguel, Salário, Mercado..." />
+              </div>
+              <div class="field">
+                <label for="dataLancamentoNovo">Data</label>
+                <input id="dataLancamentoNovo" name="dataLancamento" type="date" required />
+              </div>
+              <div class="field">
+                <label for="valorNovo">Valor</label>
+                <input id="valorNovo" name="valor" inputmode="decimal" autocomplete="off" placeholder="Ex.: 123,45" required />
+              </div>
+              <div class="field">
+                <label for="tipoLancamentoNovo">Tipo</label>
+                <select id="tipoLancamentoNovo" name="tipoLancamento">
+                  <option value="RECEITA">RECEITA</option>
+                  <option value="DESPESA">DESPESA</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="situacaoNovo">Situação</label>
+                <select id="situacaoNovo" name="situacao">
+                  <option value="EFETIVADO">EFETIVADO</option>
+                  <option value="PENDENTE">PENDENTE</option>
+                  <option value="CANCELADO">CANCELADO</option>
+                </select>
+              </div>
+              <div class="field" style="display:none">
+                <label>&nbsp;</label>
+                <button type="submit">Adicionar</button>
+              </div>
+            </form>
           </div>
-          <div class="field">
-            <label for="valor">Valor</label>
-            <input id="valor" name="valor" type="number" min="0.01" step="0.01" required />
+          <div class="modal-actions">
+            <button class="btn-secondary" type="button" onclick="closeAddModal()">Cancelar</button>
+            <button class="btn-primary" type="submit" form="addForm">Salvar</button>
           </div>
-          <div class="field">
-            <label for="tipoLancamento">Tipo</label>
-            <select id="tipoLancamento" name="tipoLancamento">
-              <option value="RECEITA">RECEITA</option>
-              <option value="DESPESA">DESPESA</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="situacao">Situação</label>
-            <select id="situacao" name="situacao">
-              <option value="EFETIVADO">EFETIVADO</option>
-              <option value="PENDENTE">PENDENTE</option>
-              <option value="CANCELADO">CANCELADO</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>&nbsp;</label>
-            <button class="btn-primary" type="submit">Adicionar</button>
-          </div>
-        </form>
-      </div>
+        </div>
+      </dialog>
 
       <div class="card">
         <div class="toolbar">
@@ -304,7 +413,7 @@
             </div>
             <div class="field">
               <label>&nbsp;</label>
-              <a class="linkbtn" th:href="@{/lancamentos/export/pdf(campo=${campo},direcao=${direcao},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">
+              <a class="linkbtn primary" th:href="@{/lancamentos/export/pdf(campo=${campo},direcao=${direcao},dataDe=${dataDe},dataAte=${dataAte},situacao=${situacao})}">
                 Exportar PDF
               </a>
             </div>
@@ -362,6 +471,78 @@
         </form>
       </footer>
     </div>
+
+    <script>
+      function normalizeDecimalPtBrToJava(value) {
+        if (!value) return value;
+        // Allow "1.234,56" or "1234,56" or "1234.56" -> "1234.56"
+        let v = String(value).trim();
+        v = v.replace(/\s/g, "");
+        const hasComma = v.includes(",");
+        if (hasComma) {
+          v = v.replace(/\./g, "");
+          v = v.replace(",", ".");
+        }
+        // keep only digits and dot (single)
+        v = v.replace(/[^0-9.]/g, "");
+        const firstDot = v.indexOf(".");
+        if (firstDot !== -1) {
+          v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, "");
+        }
+        return v;
+      }
+
+      function openAddModal() {
+        const dialog = document.getElementById("addModal");
+        if (!dialog) return;
+        const form = document.getElementById("addForm");
+        if (form) form.reset();
+        const dateInput = document.getElementById("dataLancamentoNovo");
+        if (dateInput && !dateInput.value) {
+          const now = new Date();
+          const yyyy = now.getFullYear();
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const dd = String(now.getDate()).padStart(2, "0");
+          dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+        if (typeof dialog.showModal === "function") dialog.showModal();
+        else dialog.setAttribute("open", "open");
+        setTimeout(() => {
+          const desc = document.getElementById("descricaoNovo");
+          if (desc) desc.focus();
+        }, 0);
+      }
+
+      function closeAddModal() {
+        const dialog = document.getElementById("addModal");
+        if (!dialog) return;
+        if (typeof dialog.close === "function") dialog.close();
+        else dialog.removeAttribute("open");
+      }
+
+      (function wireUpModalDismiss() {
+        const dialog = document.getElementById("addModal");
+        if (!dialog) return;
+        const form = document.getElementById("addForm");
+        if (form) {
+          form.addEventListener("submit", () => {
+            const valor = document.getElementById("valorNovo");
+            if (valor) valor.value = normalizeDecimalPtBrToJava(valor.value);
+            const saveBtn = document.querySelector('button[form="addForm"]');
+            if (saveBtn) {
+              saveBtn.disabled = true;
+              saveBtn.textContent = "Salvando...";
+            }
+          });
+        }
+        dialog.addEventListener("click", (e) => {
+          if (e.target === dialog) closeAddModal();
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && dialog.hasAttribute("open")) closeAddModal();
+        });
+      })();
+    </script>
   </body>
 </html>
 
