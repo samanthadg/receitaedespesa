@@ -234,6 +234,42 @@
         background: #fff2f2;
         color: #8a1f1f;
       }
+
+      .toast {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 9999;
+        min-width: 260px;
+        max-width: min(420px, calc(100vw - 32px));
+        border-radius: 10px;
+        padding: 12px 14px;
+        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.18);
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--text);
+        transform: translateY(-8px);
+        opacity: 0;
+        transition: transform 180ms ease, opacity 180ms ease;
+      }
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .toast.ok {
+        border-color: #b7e3c0;
+        background: #eef9f1;
+        color: #1e6b2b;
+      }
+      .toast.err {
+        border-color: #f0c2c2;
+        background: #fff2f2;
+        color: #8a1f1f;
+      }
+      .toast.out {
+        transform: translateY(-8px);
+        opacity: 0;
+      }
       footer {
         margin-top: 14px;
         color: #6b7785;
@@ -254,6 +290,7 @@
         padding: 10px 13px;
         font-size: 14px;
         cursor: pointer;
+        text-decoration: none;
         line-height: 1.2;
         display: inline-flex;
         align-items: center;
@@ -382,8 +419,16 @@
         </div>
       </header>
 
-      <div th:if="${msg}" class="alert ok" th:text="${msg}">Operação realizada.</div>
-      <div th:if="${erro}" class="alert err" th:text="${erro}">Erro.</div>
+      <div
+        id="toast"
+        class="toast"
+        th:if="${msg != null or erro != null}"
+        th:classappend="${msg != null ? ' ok show' : ' err show'}"
+        role="status"
+        aria-live="polite"
+        th:text="${msg != null ? msg : erro}">
+        Operação realizada.
+      </div>
 
       <dialog id="addModal" aria-labelledby="addModalTitle">
         <div class="modal">
@@ -590,6 +635,17 @@
         document.addEventListener("keydown", (e) => {
           if (e.key === "Escape" && dialog.hasAttribute("open")) closeAddModal();
         });
+      })();
+
+      (function wireUpToastAutoHide() {
+        const toast = document.getElementById("toast");
+        if (!toast) return;
+        setTimeout(() => {
+          toast.classList.add("out");
+        }, 5000);
+        setTimeout(() => {
+          if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 5300);
       })();
     </script>
   </body>
