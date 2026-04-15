@@ -11,6 +11,8 @@ import com.lowagie.text.Phrase;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.Rectangle;
+import br.com.lancamento.domain.TipoLancamento;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -36,6 +38,7 @@ final class LancamentoPdfExporter {
       Font metaFont = new Font(Font.HELVETICA, 10, Font.NORMAL);
       Font headerFont = new Font(Font.HELVETICA, 11, Font.BOLD);
       Font cellFont = new Font(Font.HELVETICA, 10, Font.NORMAL);
+      Font totalFont = new Font(Font.HELVETICA, 12, Font.BOLD);
 
       document.add(new Paragraph("Relatório de Lançamentos", titleFont));
       document.add(new Paragraph(filtrosText(dataDe, dataAte, situacao), metaFont));
@@ -43,6 +46,8 @@ final class LancamentoPdfExporter {
 
       PdfPTable table = new PdfPTable(new float[] {1.1f, 4.6f, 1.9f, 1.8f, 1.8f, 1.8f});
       table.setWidthPercentage(100f);
+      table.setHeaderRows(1);
+      table.getDefaultCell().setBorder(Rectangle.BOX);
 
       addHeader(table, headerFont, "ID");
       addHeader(table, headerFont, "Descrição");
@@ -59,15 +64,18 @@ final class LancamentoPdfExporter {
         table.addCell(cell(nullToEmpty(l.getDescricao()), cellFont, Element.ALIGN_LEFT));
         table.addCell(
             cell(l.getDataLancamento() == null ? "" : DATA_PT.format(l.getDataLancamento()), cellFont, Element.ALIGN_LEFT));
-        table.addCell(cell(formatMoney(moeda, l.getValor()), cellFont, Element.ALIGN_RIGHT));
-        table.addCell(cell(l.getTipoLancamento() == null ? "" : l.getTipoLancamento().name(), cellFont, Element.ALIGN_LEFT));
+        BigDecimal valor = l.getValor();
+        TipoLancamento tipo = l.getTipoLancamento();
+        BigDecimal valorAssinado = signedValue(tipo, valor);
+        table.addCell(cell(formatMoney(moeda, valorAssinado), cellFont, Element.ALIGN_RIGHT));
+        table.addCell(cell(tipo == null ? "" : tipo.name(), cellFont, Element.ALIGN_LEFT));
         table.addCell(cell(l.getSituacao() == null ? "" : l.getSituacao().name(), cellFont, Element.ALIGN_LEFT));
-        if (l.getValor() != null) total = total.add(l.getValor());
+        if (valorAssinado != null) total = total.add(valorAssinado);
       }
 
       document.add(table);
       document.add(new Paragraph(" "));
-      document.add(new Paragraph("Total: " + moeda.format(total), headerFont));
+      document.add(new Paragraph("Total (receitas - despesas): " + moeda.format(total), totalFont));
 
       document.close();
       return out.toByteArray();
@@ -82,6 +90,8 @@ final class LancamentoPdfExporter {
     PdfPCell cell = new PdfPCell(new Phrase(text, font));
     cell.setHorizontalAlignment(Element.ALIGN_LEFT);
     cell.setPadding(6f);
+    cell.setBackgroundColor(new java.awt.Color(247, 250, 255));
+    cell.setBorderColor(new java.awt.Color(223, 231, 239));
     table.addCell(cell);
   }
 
@@ -89,6 +99,7 @@ final class LancamentoPdfExporter {
     PdfPCell cell = new PdfPCell(new Phrase(text, font));
     cell.setHorizontalAlignment(align);
     cell.setPadding(5f);
+    cell.setBorderColor(new java.awt.Color(237, 241, 245));
     return cell;
   }
 
@@ -101,6 +112,12 @@ final class LancamentoPdfExporter {
 
   private static String formatMoney(NumberFormat moeda, BigDecimal valor) {
     return valor == null ? "" : moeda.format(valor);
+  }
+
+  private static BigDecimal signedValue(TipoLancamento tipo, BigDecimal valor) {
+    if (valor == null) return null;
+    if (tipo == TipoLancamento.DESPESA) return valor.negate();
+    return valor;
   }
 
   private static String nullToEmpty(String s) {
