@@ -12,11 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LancamentoEmailService {
+  private static final Logger log = LoggerFactory.getLogger(LancamentoEmailService.class);
   private static final Locale LOCALE_PT_BR = Locale.of("pt", "BR");
   private static final DateTimeFormatter DATA_PT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -106,8 +109,13 @@ public class LancamentoEmailService {
     // best-effort: se falhar, não derruba o fluxo do controller
     try {
       resend.emails().send(req);
-    } catch (ResendException ignored) {
-      // intentionally ignored
+    } catch (ResendException e) {
+      log.warn(
+          "Falha ao enviar e-mail via Resend (to={}, from={}, subject={}): {}",
+          to,
+          from,
+          subject,
+          e.getMessage());
     }
   }
 
