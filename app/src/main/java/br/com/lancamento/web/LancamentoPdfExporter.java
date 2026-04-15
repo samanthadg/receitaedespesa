@@ -1,6 +1,7 @@
 package br.com.lancamento.web;
 
 import br.com.lancamento.domain.Lancamento;
+import br.com.lancamento.domain.TipoLancamento;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
@@ -12,7 +13,6 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import com.lowagie.text.Rectangle;
-import br.com.lancamento.domain.TipoLancamento;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -57,7 +57,8 @@ final class LancamentoPdfExporter {
       addHeader(table, headerFont, "Situação");
 
       NumberFormat moeda = NumberFormat.getCurrencyInstance(LOCALE_PT_BR);
-      BigDecimal total = BigDecimal.ZERO;
+      BigDecimal totalReceitas = BigDecimal.ZERO;
+      BigDecimal totalDespesas = BigDecimal.ZERO;
 
       for (Lancamento l : lancamentos) {
         table.addCell(cell(l.getId() == null ? "" : String.valueOf(l.getId()), cellFont, Element.ALIGN_LEFT));
@@ -66,16 +67,24 @@ final class LancamentoPdfExporter {
             cell(l.getDataLancamento() == null ? "" : DATA_PT.format(l.getDataLancamento()), cellFont, Element.ALIGN_LEFT));
         BigDecimal valor = l.getValor();
         TipoLancamento tipo = l.getTipoLancamento();
-        BigDecimal valorAssinado = signedValue(tipo, valor);
-        table.addCell(cell(formatMoney(moeda, valorAssinado), cellFont, Element.ALIGN_RIGHT));
+        table.addCell(cell(formatMoney(moeda, valor), cellFont, Element.ALIGN_RIGHT));
         table.addCell(cell(tipo == null ? "" : tipo.name(), cellFont, Element.ALIGN_LEFT));
         table.addCell(cell(l.getSituacao() == null ? "" : l.getSituacao().name(), cellFont, Element.ALIGN_LEFT));
-        if (valorAssinado != null) total = total.add(valorAssinado);
+        if (valor != null) {
+          if (tipo == TipoLancamento.RECEITA) {
+            totalReceitas = totalReceitas.add(valor.abs());
+          } else if (tipo == TipoLancamento.DESPESA) {
+            totalDespesas = totalDespesas.add(valor.abs());
+          }
+        }
       }
 
       document.add(table);
       document.add(new Paragraph(" "));
-      document.add(new Paragraph("Total (receitas - despesas): " + moeda.format(total), totalFont));
+      BigDecimal saldo = totalReceitas.subtract(totalDespesas);
+      document.add(new Paragraph("Total de receitas: " + moeda.format(totalReceitas), metaFont));
+      document.add(new Paragraph("Total de despesas: " + moeda.format(totalDespesas), metaFont));
+      document.add(new Paragraph("Saldo (receitas - despesas): " + moeda.format(saldo), totalFont));
 
       document.close();
       return out.toByteArray();
@@ -112,12 +121,6 @@ final class LancamentoPdfExporter {
 
   private static String formatMoney(NumberFormat moeda, BigDecimal valor) {
     return valor == null ? "" : moeda.format(valor);
-  }
-
-  private static BigDecimal signedValue(TipoLancamento tipo, BigDecimal valor) {
-    if (valor == null) return null;
-    if (tipo == TipoLancamento.DESPESA) return valor.negate();
-    return valor;
   }
 
   private static String nullToEmpty(String s) {

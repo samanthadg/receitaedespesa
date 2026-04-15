@@ -6,6 +6,7 @@ import br.com.lancamento.domain.TipoLancamento;
 import br.com.lancamento.repo.LancamentoRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Sort;
@@ -67,7 +68,7 @@ public class LancamentoController {
     model.addAttribute("dataDe", dtDe == null ? "" : dtDe.toString());
     model.addAttribute("dataAte", dtAte == null ? "" : dtAte.toString());
     model.addAttribute("situacao", sit == null ? "" : sit.name());
-    model.addAttribute("situacoes", Situacao.values());
+    model.addAttribute("situacoes", situacoesLancamento());
     return "lancamentos/lista";
   }
 
@@ -193,10 +194,19 @@ public class LancamentoController {
   private static Situacao parseSituacaoOrNull(String value) {
     if (value == null || value.isBlank()) return null;
     try {
-      return Situacao.valueOf(value.trim());
+      Situacao sit = Situacao.valueOf(value.trim());
+      return isSituacaoLancamento(sit) ? sit : null;
     } catch (Exception e) {
       return null;
     }
+  }
+
+  private static List<Situacao> situacoesLancamento() {
+    return List.of(Situacao.EFETIVADO, Situacao.PENDENTE, Situacao.CANCELADO);
+  }
+
+  private static boolean isSituacaoLancamento(Situacao s) {
+    return s == Situacao.EFETIVADO || s == Situacao.PENDENTE || s == Situacao.CANCELADO;
   }
 }
 
