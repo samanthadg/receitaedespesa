@@ -26,6 +26,14 @@ spring:
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
 
+app:
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false}
+    to: ${APP_MAIL_TO:}
+    from: ${APP_MAIL_FROM:onboarding@resend.dev}
+  resend:
+    api-key: ${RESEND_API_KEY:}
+
 logging:
   level:
     org.hibernate.SQL: warn

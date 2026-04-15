@@ -4,6 +4,7 @@ import br.com.lancamento.domain.Lancamento;
 import br.com.lancamento.domain.Situacao;
 import br.com.lancamento.domain.TipoLancamento;
 import br.com.lancamento.repo.LancamentoRepository;
+import br.com.lancamento.service.LancamentoEmailService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -29,9 +30,12 @@ public class LancamentoController {
       Set.of("id", "descricao", "dataLancamento", "valor", "tipoLancamento", "situacao");
 
   private final LancamentoRepository lancamentoRepository;
+  private final LancamentoEmailService lancamentoEmailService;
 
-  public LancamentoController(LancamentoRepository lancamentoRepository) {
+  public LancamentoController(
+      LancamentoRepository lancamentoRepository, LancamentoEmailService lancamentoEmailService) {
     this.lancamentoRepository = lancamentoRepository;
+    this.lancamentoEmailService = lancamentoEmailService;
   }
 
   @GetMapping
@@ -122,7 +126,8 @@ public class LancamentoController {
       lancamento.setValor(new BigDecimal(valor));
       lancamento.setTipoLancamento(TipoLancamento.valueOf(tipoLancamento));
       lancamento.setSituacao(Situacao.valueOf(situacao));
-      lancamentoRepository.save(lancamento);
+      Lancamento saved = lancamentoRepository.save(lancamento);
+      lancamentoEmailService.onCreate(saved);
       redirectAttributes.addFlashAttribute("msg", "Lançamento adicionado com sucesso.");
     } catch (Exception e) {
       redirectAttributes.addFlashAttribute("erro", "Não foi possível adicionar o lançamento.");
@@ -173,7 +178,8 @@ public class LancamentoController {
       lancamento.setValor(new BigDecimal(valor));
       lancamento.setTipoLancamento(TipoLancamento.valueOf(tipoLancamento));
       lancamento.setSituacao(Situacao.valueOf(situacao));
-      lancamentoRepository.save(lancamento);
+      Lancamento saved = lancamentoRepository.save(lancamento);
+      lancamentoEmailService.onUpdate(saved);
       redirectAttributes.addFlashAttribute("msg", "Lançamento atualizado.");
       return "redirect:/lancamentos";
     } catch (Exception e) {
