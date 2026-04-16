@@ -101,6 +101,28 @@ public class LancamentoEmailService {
     sendHtml(assunto, wrapEmailHtml(body), recipient);
   }
 
+  public void onDelete(Lancamento deleted, String to) {
+    if (!enabled) return;
+    String recipient = resolveTo(to);
+    if (recipient == null) return;
+    if (deleted == null) return;
+    if (!smtpConfigured()) return;
+
+    NumberFormat moeda = NumberFormat.getCurrencyInstance(LOCALE_PT_BR);
+    String id = deleted.getId() == null ? "—" : String.valueOf(deleted.getId());
+    String tipo = deleted.getTipoLancamento() == null ? "—" : deleted.getTipoLancamento().name();
+
+    String assunto = "Lançamento excluído #" + id + " - " + tipo;
+    String body =
+        title("Lançamento excluído")
+            + paragraph("Um lançamento foi <strong>excluído</strong> do sistema.")
+            + subtitle("Dados do registro excluído")
+            + detailsTable(deleted, moeda)
+            + optionalCta();
+
+    sendHtml(assunto, wrapEmailHtml(body), recipient);
+  }
+
   private String resolveTo(String toOverride) {
     String to = normalizeEmail(toOverride);
     if (to == null) to = normalizeEmail(fallbackTo);

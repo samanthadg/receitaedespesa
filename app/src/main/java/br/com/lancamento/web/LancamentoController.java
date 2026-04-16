@@ -144,13 +144,18 @@ public class LancamentoController {
   }
 
   @PostMapping("/{id}/excluir")
-  public String excluir(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    if (lancamentoRepository.existsById(id)) {
-      lancamentoRepository.deleteById(id);
-      redirectAttributes.addFlashAttribute("msg", "Lançamento excluído.");
-    } else {
+  public String excluir(
+      @PathVariable Long id, HttpSession session, RedirectAttributes redirectAttributes) {
+    var lancamento = lancamentoRepository.findById(id).orElse(null);
+    if (lancamento == null) {
       redirectAttributes.addFlashAttribute("erro", "Lançamento não encontrado.");
+      return "redirect:/lancamentos";
     }
+
+    Lancamento copia = shallowCopy(lancamento);
+    lancamentoRepository.deleteById(id);
+    lancamentoEmailService.onDelete(copia, resolveToEmail(session));
+    redirectAttributes.addFlashAttribute("msg", "Lançamento excluído.");
     return "redirect:/lancamentos";
   }
 
