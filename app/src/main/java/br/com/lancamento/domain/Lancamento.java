@@ -8,6 +8,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -19,20 +23,27 @@ public class Lancamento {
   private Long id;
 
   @Column(nullable = false, length = 200)
+  @NotBlank
+  @Size(max = 200)
   private String descricao;
 
   @Column(name = "data_lancamento", nullable = false)
+  @NotNull
   private LocalDate dataLancamento;
 
   @Column(nullable = false, precision = 14, scale = 2)
+  @NotNull
+  @Positive
   private BigDecimal valor;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "tipo_lancamento", nullable = false, length = 20)
+  @NotNull
   private TipoLancamento tipoLancamento;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, length = 20)
+  @NotNull
   private Situacao situacao;
 
   public Long getId() {

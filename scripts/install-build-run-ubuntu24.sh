@@ -10,6 +10,9 @@ set -euo pipefail
 #   - Cria DB/usuário
 #   - Compila o jar
 #   - Sobe como serviço systemd na porta 8080
+#
+# Antes de rodar em produção:
+#   - Edite /etc/lancamento.env e preencha SMTP_USER/SMTP_PASS (App Password) e APP_MAIL_ENABLED=true
 
 APP_DIR="/opt/lancamento"
 APP_SUBDIR="${APP_DIR}/app"
@@ -35,6 +38,7 @@ echo "[2/4] Compilando a aplicação..."
 bash -lc "source /etc/profile.d/lancamento-java.sh 2>/dev/null || true; cd '${APP_SUBDIR}' && mvn -DskipTests package"
 
 echo "[3/4] Subindo serviço systemd..."
+systemctl daemon-reload
 systemctl enable --now lancamento
 
 echo "[4/4] Status do serviço:"

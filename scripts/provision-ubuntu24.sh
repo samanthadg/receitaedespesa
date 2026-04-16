@@ -82,6 +82,19 @@ DB_URL=jdbc:postgresql://localhost:5432/${DB_NAME}
 DB_USER=${DB_USER}
 DB_PASSWORD=${DB_PASS}
 PORT=8080
+
+# SMTP (Gmail) + e-mail da aplicação (preencha antes de subir em produção)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+
+APP_MAIL_ENABLED=false
+APP_MAIL_FROM=
+APP_MAIL_TO=
+
+# Opcional: link usado em botões do e-mail
+APP_PUBLIC_BASE_URL=
 EOF
 
 # Para o Maven e qualquer execução non-interactive pegar o JDK correto
@@ -101,6 +114,8 @@ Type=simple
 User=root
 WorkingDirectory=/opt/lancamento/app
 EnvironmentFile=/etc/lancamento.env
+Environment="JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64"
+Environment="PATH=/usr/lib/jvm/temurin-21-jdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=/usr/bin/java -jar /opt/lancamento/app/target/lancamento-0.0.1-SNAPSHOT.jar
 Restart=always
 RestartSec=5
