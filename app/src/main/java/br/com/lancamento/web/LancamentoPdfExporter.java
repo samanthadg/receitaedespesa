@@ -13,11 +13,13 @@ import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import com.lowagie.text.Rectangle;
+import br.com.lancamento.domain.Situacao;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -57,8 +59,6 @@ final class LancamentoPdfExporter {
       addHeader(table, headerFont, "Situação");
 
       NumberFormat moeda = NumberFormat.getCurrencyInstance(LOCALE_PT_BR);
-      BigDecimal totalReceitas = BigDecimal.ZERO;
-      BigDecimal totalDespesas = BigDecimal.ZERO;
 
       for (Lancamento l : lancamentos) {
         table.addCell(cell(l.getId() == null ? "" : String.valueOf(l.getId()), cellFont, Element.ALIGN_LEFT));
@@ -70,21 +70,11 @@ final class LancamentoPdfExporter {
         table.addCell(cell(formatMoney(moeda, valor), cellFont, Element.ALIGN_RIGHT));
         table.addCell(cell(tipo == null ? "" : tipo.name(), cellFont, Element.ALIGN_LEFT));
         table.addCell(cell(l.getSituacao() == null ? "" : l.getSituacao().name(), cellFont, Element.ALIGN_LEFT));
-        if (valor != null) {
-          if (tipo == TipoLancamento.RECEITA) {
-            totalReceitas = totalReceitas.add(valor.abs());
-          } else if (tipo == TipoLancamento.DESPESA) {
-            totalDespesas = totalDespesas.add(valor.abs());
-          }
-        }
       }
 
       document.add(table);
       document.add(new Paragraph(" "));
-      BigDecimal saldo = totalReceitas.subtract(totalDespesas);
-      document.add(new Paragraph("Total de receitas: " + moeda.format(totalReceitas), metaFont));
-      document.add(new Paragraph("Total de despesas: " + moeda.format(totalDespesas), metaFont));
-      document.add(new Paragraph("Saldo (receitas - despesas): " + moeda.format(saldo), totalFont));
+      addTotaisPorSituacao(document, lancamentos, situacao, moeda, metaFont, totalFont);
 
       document.close();
       return out.toByteArray();
@@ -113,10 +103,108 @@ final class LancamentoPdfExporter {
   }
 
   private static String filtrosText(LocalDate dataDe, LocalDate dataAte, String situacao) {
-    String de = dataDe == null ? "—" : DATA_PT.format(dataDe);
-    String ate = dataAte == null ? "—" : DATA_PT.format(dataAte);
-    String sit = (situacao == null || situacao.isBlank()) ? "Todas" : situacao;
-    return "Filtros: data de " + de + " até " + ate + " | situação: " + sit + " | gerado em " + DATA_PT.format(LocalDate.now());
+    String geradoEm = DATA_PT.format(LocalDate.now());
+    boolean temDe = dataDe != null;
+    boolean temAte = dataAte != null;
+    boolean temSit = situacao != null && !situacao.isBlank();
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("Filtros: ");
+
+    if (!temDe && !temAte && !temSit) {
+      sb.append("Gerado em ").append(geradoEm);
+      return sb.toString();
+    }
+
+    boolean primeiro = true;
+    if (temDe && !temAte) {
+      sb.append("Data(s) a partir de ").append(DATA_PT.format(dataDe));
+      primeiro = false;
+    } else if (!temDe && temAte) {
+      sb.append("Data(s) até ").append(DATA_PT.format(dataAte));
+      primeiro = false;
+    } else if (temDe && temAte) {
+      sb.append("Data(s) entre ").append(DATA_PT.format(dataDe)).append(" e ").append(DATA_PT.format(dataAte));
+      primeiro = false;
+    }
+
+    if (temSit) {
+      if (!primeiro) sb.append(" | ");
+      sb.append("Situação: ").append(situacao.trim());
+      primeiro = false;
+    }
+
+    if (!primeiro) sb.append(" | ");
+    sb.append("Gerado em ").append(geradoEm);
+    return sb.toString();
+  }
+
+  private static void addTotaisPorSituacao(
+      Document document,
+      List<Lancamento> lancamentos,
+      String situacaoFiltro,
+      NumberFormat moeda,
+      Font metaFont,
+      Font totalFont)
+      throws DocumentException {
+    Situacao filtro = parseSituacaoLancamentoOrNull(situacaoFiltro);
+
+    EnumMap<Situacao, BigDecimal> receitas = new EnumMap<>(Situacao.class);
+    EnumMap<Situacao, BigDecimal> despesas = new EnumMap<>(Situacao.class);
+    for (Situacao s : situacoesRelatorio()) {
+      receitas.put(s, BigDecimal.ZERO);
+      despesas.put(s, BigDecimal.ZERO);
+    }
+
+    for (Lancamento l : lancamentos) {
+      Situacao sit = l.getSituacao();
+      if (sit == null) continue;
+      if (!receitas.containsKey(sit)) continue;
+
+      BigDecimal valor = l.getValor();
+      if (valor == null) continue;
+      TipoLancamento tipo = l.getTipoLancamento();
+      if (tipo == TipoLancamento.RECEITA) {
+        receitas.put(sit, receitas.get(sit).add(valor.abs()));
+      } else if (tipo == TipoLancamento.DESPESA) {
+        despesas.put(sit, despesas.get(sit).add(valor.abs()));
+      }
+    }
+
+    document.add(new Paragraph("Totais por situação", totalFont));
+
+    List<Situacao> ordem = situacoesRelatorio();
+    if (filtro != null) {
+      ordem = List.of(filtro);
+    }
+
+    for (Situacao sit : ordem) {
+      BigDecimal rec = receitas.getOrDefault(sit, BigDecimal.ZERO);
+      BigDecimal des = despesas.getOrDefault(sit, BigDecimal.ZERO);
+      BigDecimal saldo = rec.subtract(des);
+
+      document.add(new Paragraph("Situação: " + sit.name(), metaFont));
+      document.add(new Paragraph("Total de receitas: " + moeda.format(rec), metaFont));
+      document.add(new Paragraph("Total de despesas: " + moeda.format(des), metaFont));
+      document.add(new Paragraph("Saldo: " + moeda.format(saldo), metaFont));
+      document.add(new Paragraph(" "));
+    }
+  }
+
+  private static List<Situacao> situacoesRelatorio() {
+    return List.of(Situacao.EFETIVADO, Situacao.PENDENTE, Situacao.CANCELADO);
+  }
+
+  private static Situacao parseSituacaoLancamentoOrNull(String situacao) {
+    if (situacao == null) return null;
+    String v = situacao.trim();
+    if (v.isBlank()) return null;
+    try {
+      Situacao s = Situacao.valueOf(v);
+      return situacoesRelatorio().contains(s) ? s : null;
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   private static String formatMoney(NumberFormat moeda, BigDecimal valor) {
