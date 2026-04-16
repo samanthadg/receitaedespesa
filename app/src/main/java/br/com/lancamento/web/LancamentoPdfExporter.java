@@ -173,22 +173,81 @@ final class LancamentoPdfExporter {
 
     document.add(new Paragraph("Totais por situação", totalFont));
 
-    List<Situacao> ordem = situacoesRelatorio();
-    if (filtro != null) {
-      ordem = List.of(filtro);
+    if (filtro == null) {
+      PdfPTable cols = new PdfPTable(new float[] {1f, 1f, 1f});
+      cols.setWidthPercentage(100f);
+      cols.setSpacingBefore(6f);
+      cols.setSpacingAfter(10f);
+
+      PdfPCell ef = situacaoTotalsCell(Situacao.EFETIVADO, receitas, despesas, moeda, metaFont, totalFont);
+      PdfPCell pe = situacaoTotalsCell(Situacao.PENDENTE, receitas, despesas, moeda, metaFont, totalFont);
+      PdfPCell ca = situacaoTotalsCell(Situacao.CANCELADO, receitas, despesas, moeda, metaFont, totalFont);
+      cols.addCell(ef);
+      cols.addCell(pe);
+      cols.addCell(ca);
+      document.add(cols);
+
+      BigDecimal comboRec =
+          receitas.getOrDefault(Situacao.EFETIVADO, BigDecimal.ZERO)
+              .add(receitas.getOrDefault(Situacao.PENDENTE, BigDecimal.ZERO));
+      BigDecimal comboDes =
+          despesas.getOrDefault(Situacao.EFETIVADO, BigDecimal.ZERO)
+              .add(despesas.getOrDefault(Situacao.PENDENTE, BigDecimal.ZERO));
+      BigDecimal comboSaldo = comboRec.subtract(comboDes);
+
+      document.add(new Paragraph("Total (EFETIVADO + PENDENTE)", totalFont));
+      document.add(new Paragraph("Total de receitas: " + moeda.format(comboRec), metaFont));
+      document.add(new Paragraph("Total de despesas: " + moeda.format(comboDes), metaFont));
+      document.add(new Paragraph("Saldo: " + moeda.format(comboSaldo), metaFont));
+      return;
     }
 
-    for (Situacao sit : ordem) {
-      BigDecimal rec = receitas.getOrDefault(sit, BigDecimal.ZERO);
-      BigDecimal des = despesas.getOrDefault(sit, BigDecimal.ZERO);
-      BigDecimal saldo = rec.subtract(des);
+    // Situação filtrada: manter o layout simples (uma coluna), pois só existe uma situação selecionada.
+    PdfPTable single = new PdfPTable(1);
+    single.setWidthPercentage(100f);
+    single.setSpacingBefore(6f);
+    single.setSpacingAfter(10f);
+    single.addCell(situacaoTotalsCell(filtro, receitas, despesas, moeda, metaFont, totalFont));
+    document.add(single);
+  }
 
-      document.add(new Paragraph("Situação: " + sit.name(), metaFont));
-      document.add(new Paragraph("Total de receitas: " + moeda.format(rec), metaFont));
-      document.add(new Paragraph("Total de despesas: " + moeda.format(des), metaFont));
-      document.add(new Paragraph("Saldo: " + moeda.format(saldo), metaFont));
-      document.add(new Paragraph(" "));
-    }
+  private static PdfPCell situacaoTotalsCell(
+      Situacao sit,
+      EnumMap<Situacao, BigDecimal> receitas,
+      EnumMap<Situacao, BigDecimal> despesas,
+      NumberFormat moeda,
+      Font metaFont,
+      Font titleFont) {
+    BigDecimal rec = receitas.getOrDefault(sit, BigDecimal.ZERO);
+    BigDecimal des = despesas.getOrDefault(sit, BigDecimal.ZERO);
+    BigDecimal saldo = rec.subtract(des);
+
+    PdfPTable inner = new PdfPTable(1);
+    inner.setWidthPercentage(100f);
+
+    PdfPCell h = new PdfPCell(new Phrase("Situação: " + sit.name(), titleFont));
+    h.setBorder(Rectangle.BOX);
+    h.setBorderColor(new java.awt.Color(223, 231, 239));
+    h.setBackgroundColor(new java.awt.Color(247, 250, 255));
+    h.setPadding(8f);
+    inner.addCell(h);
+
+    inner.addCell(lineCell("Total de receitas: " + moeda.format(rec), metaFont));
+    inner.addCell(lineCell("Total de despesas: " + moeda.format(des), metaFont));
+    inner.addCell(lineCell("Saldo: " + moeda.format(saldo), metaFont));
+
+    PdfPCell outer = new PdfPCell(inner);
+    outer.setBorder(Rectangle.NO_BORDER);
+    outer.setPadding(6f);
+    return outer;
+  }
+
+  private static PdfPCell lineCell(String text, Font font) {
+    PdfPCell c = new PdfPCell(new Phrase(text, font));
+    c.setBorder(Rectangle.BOX);
+    c.setBorderColor(new java.awt.Color(237, 241, 245));
+    c.setPadding(7f);
+    return c;
   }
 
   private static List<Situacao> situacoesRelatorio() {
