@@ -6,6 +6,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
+import com.lowagie.text.Chunk;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
@@ -51,25 +52,25 @@ final class LancamentoPdfExporter {
       table.setHeaderRows(1);
       table.getDefaultCell().setBorder(Rectangle.BOX);
 
-      addHeader(table, headerFont, "ID");
-      addHeader(table, headerFont, "Descrição");
-      addHeader(table, headerFont, "Data");
-      addHeader(table, headerFont, "Valor");
-      addHeader(table, headerFont, "Tipo");
-      addHeader(table, headerFont, "Situação");
+      addHeader(table, headerFont, "ID", Element.ALIGN_CENTER);
+      addHeader(table, headerFont, "Descrição", Element.ALIGN_LEFT);
+      addHeader(table, headerFont, "Data", Element.ALIGN_CENTER);
+      addHeader(table, headerFont, "Valor", Element.ALIGN_CENTER);
+      addHeader(table, headerFont, "Tipo", Element.ALIGN_CENTER);
+      addHeader(table, headerFont, "Situação", Element.ALIGN_CENTER);
 
       NumberFormat moeda = NumberFormat.getCurrencyInstance(LOCALE_PT_BR);
 
       for (Lancamento l : lancamentos) {
-        table.addCell(cell(l.getId() == null ? "" : String.valueOf(l.getId()), cellFont, Element.ALIGN_LEFT));
+        table.addCell(cell(l.getId() == null ? "" : String.valueOf(l.getId()), cellFont, Element.ALIGN_CENTER));
         table.addCell(cell(nullToEmpty(l.getDescricao()), cellFont, Element.ALIGN_LEFT));
         table.addCell(
-            cell(l.getDataLancamento() == null ? "" : DATA_PT.format(l.getDataLancamento()), cellFont, Element.ALIGN_LEFT));
+            cell(l.getDataLancamento() == null ? "" : DATA_PT.format(l.getDataLancamento()), cellFont, Element.ALIGN_CENTER));
         BigDecimal valor = l.getValor();
         TipoLancamento tipo = l.getTipoLancamento();
-        table.addCell(cell(formatMoney(moeda, valor), cellFont, Element.ALIGN_RIGHT));
-        table.addCell(cell(tipo == null ? "" : tipo.name(), cellFont, Element.ALIGN_LEFT));
-        table.addCell(cell(l.getSituacao() == null ? "" : l.getSituacao().name(), cellFont, Element.ALIGN_LEFT));
+        table.addCell(cell(formatMoney(moeda, valor), cellFont, Element.ALIGN_CENTER));
+        table.addCell(cell(tipo == null ? "" : tipo.name(), cellFont, Element.ALIGN_CENTER));
+        table.addCell(cell(l.getSituacao() == null ? "" : l.getSituacao().name(), cellFont, Element.ALIGN_CENTER));
       }
 
       document.add(table);
@@ -85,9 +86,9 @@ final class LancamentoPdfExporter {
     }
   }
 
-  private static void addHeader(PdfPTable table, Font font, String text) {
+  private static void addHeader(PdfPTable table, Font font, String text, int align) {
     PdfPCell cell = new PdfPCell(new Phrase(text, font));
-    cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+    cell.setHorizontalAlignment(align);
     cell.setPadding(6f);
     cell.setBackgroundColor(new java.awt.Color(247, 250, 255));
     cell.setBorderColor(new java.awt.Color(223, 231, 239));
@@ -108,13 +109,12 @@ final class LancamentoPdfExporter {
     boolean temAte = dataAte != null;
     boolean temSit = situacao != null && !situacao.isBlank();
 
+    if (!temDe && !temAte && !temSit) {
+      return "Gerado em " + geradoEm;
+    }
+
     StringBuilder sb = new StringBuilder();
     sb.append("Filtros: ");
-
-    if (!temDe && !temAte && !temSit) {
-      sb.append("Gerado em ").append(geradoEm);
-      return sb.toString();
-    }
 
     boolean primeiro = true;
     if (temDe && !temAte) {
@@ -179,9 +179,9 @@ final class LancamentoPdfExporter {
       cols.setSpacingBefore(6f);
       cols.setSpacingAfter(10f);
 
-      PdfPCell ef = situacaoTotalsCell(Situacao.EFETIVADO, receitas, despesas, moeda, metaFont, totalFont);
-      PdfPCell pe = situacaoTotalsCell(Situacao.PENDENTE, receitas, despesas, moeda, metaFont, totalFont);
-      PdfPCell ca = situacaoTotalsCell(Situacao.CANCELADO, receitas, despesas, moeda, metaFont, totalFont);
+      PdfPCell ef = situacaoTotalsTextCell(Situacao.EFETIVADO, receitas, despesas, moeda, metaFont, totalFont);
+      PdfPCell pe = situacaoTotalsTextCell(Situacao.PENDENTE, receitas, despesas, moeda, metaFont, totalFont);
+      PdfPCell ca = situacaoTotalsTextCell(Situacao.CANCELADO, receitas, despesas, moeda, metaFont, totalFont);
       cols.addCell(ef);
       cols.addCell(pe);
       cols.addCell(ca);
@@ -195,10 +195,10 @@ final class LancamentoPdfExporter {
               .add(despesas.getOrDefault(Situacao.PENDENTE, BigDecimal.ZERO));
       BigDecimal comboSaldo = comboRec.subtract(comboDes);
 
-      document.add(new Paragraph("Total (EFETIVADO + PENDENTE)", totalFont));
-      document.add(new Paragraph("Total de receitas: " + moeda.format(comboRec), metaFont));
-      document.add(new Paragraph("Total de despesas: " + moeda.format(comboDes), metaFont));
-      document.add(new Paragraph("Saldo: " + moeda.format(comboSaldo), metaFont));
+      document.add(centeredParagraph("Total (EFETIVADO + PENDENTE)", totalFont));
+      document.add(centeredParagraph("Total de receitas: " + moeda.format(comboRec), metaFont));
+      document.add(centeredParagraph("Total de despesas: " + moeda.format(comboDes), metaFont));
+      document.add(centeredParagraph("Saldo: " + moeda.format(comboSaldo), metaFont));
       return;
     }
 
@@ -207,11 +207,11 @@ final class LancamentoPdfExporter {
     single.setWidthPercentage(100f);
     single.setSpacingBefore(6f);
     single.setSpacingAfter(10f);
-    single.addCell(situacaoTotalsCell(filtro, receitas, despesas, moeda, metaFont, totalFont));
+    single.addCell(situacaoTotalsTextCell(filtro, receitas, despesas, moeda, metaFont, totalFont));
     document.add(single);
   }
 
-  private static PdfPCell situacaoTotalsCell(
+  private static PdfPCell situacaoTotalsTextCell(
       Situacao sit,
       EnumMap<Situacao, BigDecimal> receitas,
       EnumMap<Situacao, BigDecimal> despesas,
@@ -222,32 +222,29 @@ final class LancamentoPdfExporter {
     BigDecimal des = despesas.getOrDefault(sit, BigDecimal.ZERO);
     BigDecimal saldo = rec.subtract(des);
 
-    PdfPTable inner = new PdfPTable(1);
-    inner.setWidthPercentage(100f);
+    Paragraph p = new Paragraph();
+    p.setAlignment(Element.ALIGN_CENTER);
+    p.add(new Chunk("Situação: " + sit.name() + "\n", titleFont));
+    p.add(new Chunk("\n", metaFont));
+    p.add(new Chunk("Total de receitas:\n", metaFont));
+    p.add(new Chunk(moeda.format(rec) + "\n\n", metaFont));
+    p.add(new Chunk("Total de despesas:\n", metaFont));
+    p.add(new Chunk(moeda.format(des) + "\n\n", metaFont));
+    p.add(new Chunk("Saldo:\n", metaFont));
+    p.add(new Chunk(moeda.format(saldo), metaFont));
 
-    PdfPCell h = new PdfPCell(new Phrase("Situação: " + sit.name(), titleFont));
-    h.setBorder(Rectangle.BOX);
-    h.setBorderColor(new java.awt.Color(223, 231, 239));
-    h.setBackgroundColor(new java.awt.Color(247, 250, 255));
-    h.setPadding(8f);
-    inner.addCell(h);
-
-    inner.addCell(lineCell("Total de receitas: " + moeda.format(rec), metaFont));
-    inner.addCell(lineCell("Total de despesas: " + moeda.format(des), metaFont));
-    inner.addCell(lineCell("Saldo: " + moeda.format(saldo), metaFont));
-
-    PdfPCell outer = new PdfPCell(inner);
-    outer.setBorder(Rectangle.NO_BORDER);
-    outer.setPadding(6f);
-    return outer;
+    PdfPCell cell = new PdfPCell(p);
+    cell.setBorder(Rectangle.NO_BORDER);
+    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+    cell.setVerticalAlignment(Element.ALIGN_TOP);
+    cell.setPadding(8f);
+    return cell;
   }
 
-  private static PdfPCell lineCell(String text, Font font) {
-    PdfPCell c = new PdfPCell(new Phrase(text, font));
-    c.setBorder(Rectangle.BOX);
-    c.setBorderColor(new java.awt.Color(237, 241, 245));
-    c.setPadding(7f);
-    return c;
+  private static Paragraph centeredParagraph(String text, Font font) {
+    Paragraph p = new Paragraph(text, font);
+    p.setAlignment(Element.ALIGN_CENTER);
+    return p;
   }
 
   private static List<Situacao> situacoesRelatorio() {
