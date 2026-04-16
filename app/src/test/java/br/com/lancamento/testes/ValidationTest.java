@@ -1,7 +1,11 @@
-package br.com.lancamento.domain;
+package br.com.lancamento.testes;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import br.com.lancamento.domain.Lancamento;
+import br.com.lancamento.domain.Situacao;
+import br.com.lancamento.domain.TipoLancamento;
+import br.com.lancamento.domain.Usuario;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import java.math.BigDecimal;
@@ -74,4 +78,3 @@ class ValidationTest {
     return u;
   }
 }
-

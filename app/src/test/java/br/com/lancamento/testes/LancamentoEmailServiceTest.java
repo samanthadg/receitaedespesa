@@ -1,4 +1,4 @@
-package br.com.lancamento.service;
+package br.com.lancamento.testes;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import br.com.lancamento.domain.Lancamento;
 import br.com.lancamento.domain.Situacao;
 import br.com.lancamento.domain.TipoLancamento;
+import br.com.lancamento.service.LancamentoEmailService;
 import jakarta.mail.internet.MimeMessage;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -73,4 +74,3 @@ class LancamentoEmailServiceTest {
     return l;
   }
 }
-

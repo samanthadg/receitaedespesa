@@ -1,4 +1,4 @@
-package br.com.lancamento.repo;
+package br.com.lancamento.testes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import br.com.lancamento.domain.Lancamento;
 import br.com.lancamento.domain.Situacao;
 import br.com.lancamento.domain.TipoLancamento;
+import br.com.lancamento.repo.LancamentoRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -66,4 +67,3 @@ class LancamentoRepositoryJpaTest {
     return l;
   }
 }
-

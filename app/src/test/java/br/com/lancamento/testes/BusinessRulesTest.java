@@ -1,8 +1,11 @@
-package br.com.lancamento.domain;
+package br.com.lancamento.testes;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import br.com.lancamento.domain.Lancamento;
+import br.com.lancamento.domain.Situacao;
+import br.com.lancamento.domain.TipoLancamento;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import java.math.BigDecimal;
@@ -45,4 +48,3 @@ class BusinessRulesTest {
     return l;
   }
 }
-

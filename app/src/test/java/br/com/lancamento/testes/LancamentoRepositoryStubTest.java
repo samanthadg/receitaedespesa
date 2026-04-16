@@ -1,4 +1,4 @@
-package br.com.lancamento.repo;
+package br.com.lancamento.testes;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import br.com.lancamento.domain.Lancamento;
 import br.com.lancamento.domain.Situacao;
 import br.com.lancamento.domain.TipoLancamento;
+import br.com.lancamento.repo.LancamentoRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.junit.jupiter.api.Tag;
@@ -42,4 +43,3 @@ class LancamentoRepositoryStubTest {
     return l;
   }
 }
-

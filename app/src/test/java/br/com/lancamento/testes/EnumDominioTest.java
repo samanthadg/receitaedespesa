@@ -1,9 +1,11 @@
-package br.com.lancamento.domain;
+package br.com.lancamento.testes;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import br.com.lancamento.domain.Situacao;
+import br.com.lancamento.domain.TipoLancamento;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -27,4 +29,3 @@ class EnumDominioTest {
     assertDoesNotThrow(() -> Situacao.valueOf("CANCELADO"));
   }
 }
-

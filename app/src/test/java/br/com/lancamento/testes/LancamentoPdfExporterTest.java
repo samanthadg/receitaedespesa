@@ -1,4 +1,4 @@
-package br.com.lancamento.web;
+package br.com.lancamento.testes;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import br.com.lancamento.domain.Lancamento;
 import br.com.lancamento.domain.Situacao;
 import br.com.lancamento.domain.TipoLancamento;
+import br.com.lancamento.web.LancamentoPdfExporter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -36,4 +37,3 @@ class LancamentoPdfExporterTest {
     return l;
   }
 }
-

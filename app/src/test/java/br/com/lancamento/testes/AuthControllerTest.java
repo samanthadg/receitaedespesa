@@ -1,4 +1,4 @@
-package br.com.lancamento.web;
+package br.com.lancamento.testes;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import br.com.lancamento.domain.Usuario;
 import br.com.lancamento.repo.UsuarioRepository;
+import br.com.lancamento.web.AuthController;
 import java.util.Optional;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -51,4 +52,3 @@ class AuthControllerTest {
         .andExpect(model().attributeExists("error"));
   }
 }
-

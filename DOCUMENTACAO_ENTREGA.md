@@ -232,7 +232,87 @@ Registro orientativo do tempo gasto por etapa (ajuste os valores conforme seu cr
 
 ---
 
-## 6. Entrega (artefatos)
+## 6. Testes automatizados (20 cenários)
+
+Os testes foram implementados em **JUnit 5** (Spring Boot Starter Test) e ficam reunidos no pacote **`br.com.lancamento.testes`**, pasta:
+
+`app/src/test/java/br/com/lancamento/testes/`
+
+A execução na VM é feita pelos scripts em `scripts/`. O Maven roda em modo silencioso (`-q`); na tela aparece **apenas** o resumo gerado por `scripts/print-test-summary.py`, no formato:
+
+`Teste N, <rótulo>, testa <objetivo>, ok|erro;`
+
+**Requisito:** `python3` disponível no PATH (padrão no Ubuntu 24.04).
+
+### 6.1 Como executar na VM
+
+Rodar **todos os testes**:
+
+```bash
+cd /opt/lancamento
+chmod +x scripts/run-tests-all.sh scripts/run-tests-by-type.sh
+./scripts/run-tests-all.sh
+```
+
+Rodar **por tipo** (enum/validation/business/mock/db/auth/pdf):
+
+```bash
+cd /opt/lancamento
+./scripts/run-tests-by-type.sh enum
+./scripts/run-tests-by-type.sh validation
+./scripts/run-tests-by-type.sh business
+./scripts/run-tests-by-type.sh mock
+./scripts/run-tests-by-type.sh db
+./scripts/run-tests-by-type.sh auth
+./scripts/run-tests-by-type.sh pdf
+```
+
+### 6.2 Lista dos 20 testes
+
+**Enum e domínio**
+
+1. `tipoLancamento_receita_existeNoEnum()` — verifica `RECEITA` no enum `TipoLancamento` (`br.com.lancamento.testes.EnumDominioTest`)
+2. `tipoLancamento_valorInvalido_lancaExcecao()` — valor inválido lança `IllegalArgumentException` (`br.com.lancamento.testes.EnumDominioTest`)
+3. `situacao_efetivado_existeNoEnum()` — `EFETIVADO`, `PENDENTE`, `CANCELADO` no enum `Situacao` (`br.com.lancamento.testes.EnumDominioTest`)
+
+**Input / validação**
+
+4. `lancamento_descricaoVazia_naoDeveSerValido()` — descrição vazia falha validação (`br.com.lancamento.testes.ValidationTest`)
+5. `lancamento_valorNegativo_naoDeveSerValido()` — valor negativo falha validação (`br.com.lancamento.testes.ValidationTest`)
+6. `lancamento_dataNula_naoDeveSerValido()` — data nula falha validação (`br.com.lancamento.testes.ValidationTest`)
+7. `usuario_loginVazio_naoDeveSerValido()` — login vazio falha validação (`br.com.lancamento.testes.ValidationTest`)
+8. `usuario_emailAcimaDe160Chars_naoDeveSerValido()` — e-mail > 160 chars falha validação (`br.com.lancamento.testes.ValidationTest`)
+
+**Regra de negócio**
+
+9. `lancamento_situacaoInvalida_lancaExcecao()` — situação inválida lança exceção (`br.com.lancamento.testes.BusinessRulesTest`)
+10. `lancamento_valorZero_naoDeveSerValido()` — valor zero falha validação (`br.com.lancamento.testes.BusinessRulesTest`)
+11. `lancamento_tipoNulo_naoDeveSerValido()` — tipo nulo falha validação (`br.com.lancamento.testes.BusinessRulesTest`)
+
+**Mock / Stub**
+
+12. `emailService_criarLancamento_enviaEmail()` — ao criar lançamento, chama envio 1 vez (`br.com.lancamento.testes.LancamentoEmailServiceTest`)
+13. `emailService_mailDesabilitado_naoEnviaEmail()` — e-mail desabilitado não chama envio (`br.com.lancamento.testes.LancamentoEmailServiceTest`)
+14. `lancamentoRepo_salvar_retornaEntidade()` — stub do repositório retorna entidade com ID (`br.com.lancamento.testes.LancamentoRepositoryStubTest`)
+
+**Banco de dados (JPA)**
+
+15. `repositorio_salvarEBuscar_lancamentoEncontrado()` — salva e busca por ID (`br.com.lancamento.testes.LancamentoRepositoryJpaTest`)
+16. `repositorio_listarPorSituacao_retornaApenasEfetivados()` — filtra por `EFETIVADO` (`br.com.lancamento.testes.LancamentoRepositoryJpaTest`)
+17. `repositorio_contarLancamentos_retornaTotalCorreto()` — `count()` retorna N (`br.com.lancamento.testes.LancamentoRepositoryJpaTest`)
+
+**Autenticação / rota**
+
+18. `login_credenciaisValidas_redirecionaParaHome()` — POST `/login` redireciona para `/lancamentos` (`br.com.lancamento.testes.AuthControllerTest`)
+19. `login_credenciaisInvalidas_retornaMensagemDeErro()` — POST `/login` retorna `auth/login` com mensagem de erro (`br.com.lancamento.testes.AuthControllerTest`)
+
+**Exportação / PDF**
+
+20. `pdfExporter_gerarPdf_naoRetornaNulo()` — exportação PDF retorna bytes não nulos (`br.com.lancamento.testes.LancamentoPdfExporterTest`)
+
+---
+
+## 7. Entrega (artefatos)
 
 - **`DOCUMENTACAO_ENTREGA.pdf`** — este documento.  
 - Link do repositório: `https://github.com/samanthadg/receitaedespesa.git`

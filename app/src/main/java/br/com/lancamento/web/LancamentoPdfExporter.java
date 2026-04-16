@@ -24,13 +24,13 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 
-final class LancamentoPdfExporter {
+public final class LancamentoPdfExporter {
   private static final DateTimeFormatter DATA_PT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
   private static final Locale LOCALE_PT_BR = Locale.of("pt", "BR");
 
   private LancamentoPdfExporter() {}
 
-  static byte[] export(
+  public static byte[] export(
       List<Lancamento> lancamentos, LocalDate dataDe, LocalDate dataAte, String situacao) {
     try (var out = new ByteArrayOutputStream()) {
       Document document = new Document(PageSize.A4.rotate(), 36, 36, 36, 36);
