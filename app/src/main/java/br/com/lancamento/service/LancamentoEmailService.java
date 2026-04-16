@@ -3,9 +3,7 @@ package br.com.lancamento.service;
 import br.com.lancamento.domain.Lancamento;
 import br.com.lancamento.domain.Situacao;
 import br.com.lancamento.domain.TipoLancamento;
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.CreateEmailOptions;
+import jakarta.mail.internet.MimeMessage;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -15,6 +13,8 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,31 +23,37 @@ public class LancamentoEmailService {
   private static final Locale LOCALE_PT_BR = Locale.of("pt", "BR");
   private static final DateTimeFormatter DATA_PT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
+  private final JavaMailSender mailSender;
   private final boolean enabled;
   private final String fallbackTo;
   private final String from;
-  private final String apiKey;
+  private final String smtpUser;
+  private final String smtpPass;
   private final String publicBaseUrl;
 
   public LancamentoEmailService(
+      JavaMailSender mailSender,
       @Value("${app.mail.enabled:false}") boolean enabled,
       @Value("${app.mail.to:}") String fallbackTo,
-      @Value("${app.mail.from:onboarding@resend.dev}") String from,
-      @Value("${app.public-base-url:}") String publicBaseUrl,
-      @Value("${app.resend.api-key:}") String apiKey) {
+      @Value("${app.mail.from:}") String from,
+      @Value("${spring.mail.username:}") String smtpUser,
+      @Value("${spring.mail.password:}") String smtpPass,
+      @Value("${app.public-base-url:}") String publicBaseUrl) {
+    this.mailSender = mailSender;
     this.enabled = enabled;
     this.fallbackTo = fallbackTo == null ? "" : fallbackTo.trim();
     this.from = from == null ? "" : from.trim();
+    this.smtpUser = smtpUser == null ? "" : smtpUser.trim();
+    this.smtpPass = smtpPass == null ? "" : smtpPass.replaceAll("\\s+", "").trim();
     this.publicBaseUrl = normalizeBaseUrl(publicBaseUrl);
-    this.apiKey = apiKey == null ? "" : apiKey.trim();
   }
 
   public void onCreate(Lancamento l, String to) {
     if (!enabled) return;
     String recipient = resolveTo(to);
     if (recipient == null) return;
-    if (apiKey.isBlank()) return;
     if (l == null) return;
+    if (!smtpConfigured()) return;
 
     NumberFormat moeda = NumberFormat.getCurrencyInstance(LOCALE_PT_BR);
     String id = l.getId() == null ? "—" : String.valueOf(l.getId());
@@ -67,8 +73,8 @@ public class LancamentoEmailService {
     if (!enabled) return;
     String recipient = resolveTo(to);
     if (recipient == null) return;
-    if (apiKey.isBlank()) return;
     if (after == null) return;
+    if (!smtpConfigured()) return;
 
     NumberFormat moeda = NumberFormat.getCurrencyInstance(LOCALE_PT_BR);
     Snapshot oldSnap = Snapshot.from(before, moeda);
@@ -101,21 +107,38 @@ public class LancamentoEmailService {
     return to;
   }
 
+  private boolean smtpConfigured() {
+    if (smtpUser.isBlank() || smtpPass.isBlank()) {
+      log.warn("SMTP não configurado: defina SMTP_USER e SMTP_PASS (via env / spring.mail.username/password).");
+      return false;
+    }
+    return true;
+  }
+
+  private String resolveFromAddress() {
+    if (!from.isBlank()) return from;
+    if (!smtpUser.isBlank()) return smtpUser;
+    return "";
+  }
+
   private void sendHtml(String subject, String html, String to) {
-    Resend resend = new Resend(apiKey);
-    CreateEmailOptions req =
-        CreateEmailOptions.builder().from(from).to(to).subject(subject).html(html).build();
+    String fromAddr = resolveFromAddress();
+    if (fromAddr.isBlank()) {
+      log.warn("Remetente não configurado: defina APP_MAIL_FROM ou SMTP_USER.");
+      return;
+    }
 
     // best-effort: se falhar, não derruba o fluxo do controller
     try {
-      resend.emails().send(req);
-    } catch (ResendException e) {
-      log.warn(
-          "Falha ao enviar e-mail via Resend (to={}, from={}, subject={}): {}",
-          to,
-          from,
-          subject,
-          e.getMessage());
+      MimeMessage message = mailSender.createMimeMessage();
+      MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+      helper.setFrom(fromAddr);
+      helper.setTo(to);
+      helper.setSubject(subject);
+      helper.setText(html, true);
+      mailSender.send(message);
+    } catch (Exception e) {
+      log.warn("Falha ao enviar e-mail via SMTP (to={}, from={}, subject={}): {}", to, fromAddr, subject, e.getMessage());
     }
   }
 

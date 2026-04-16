@@ -25,15 +25,24 @@ spring:
       mode: always
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASS:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 app:
   mail:
     enabled: ${APP_MAIL_ENABLED:false}
     to: ${APP_MAIL_TO:}
-    from: ${APP_MAIL_FROM:onboarding@resend.dev}
+    from: ${APP_MAIL_FROM:${SMTP_USER:}}
   public-base-url: ${APP_PUBLIC_BASE_URL:}
-  resend:
-    api-key: ${RESEND_API_KEY:}
 
 logging:
   level:
