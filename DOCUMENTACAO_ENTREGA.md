@@ -238,20 +238,27 @@ Os testes foram implementados em **JUnit 5** (Spring Boot Starter Test) e ficam 
 
 `app/src/test/java/br/com/lancamento/testes/`
 
-A execução na VM é feita pelos scripts em `scripts/`. O Maven roda em modo silencioso (`-q`); na tela aparece **apenas** o resumo gerado por `scripts/print-test-summary.py`, no formato:
+A execução na VM é feita pelos scripts em `scripts/`. O Maven roda em modo silencioso (`-q`); na tela aparece **apenas** o resumo gerado em **Java** pela classe `br.com.lancamento.testes.TestSummaryPrinter` (via `exec-maven-plugin` após os testes), no formato:
 
 `Teste N, <rótulo>, testa <objetivo>, ok|erro;`
 
-**Requisito:** `python3` disponível no PATH (padrão no Ubuntu 24.04).
+**Requisito:** apenas **JDK 21** e Maven (já previstos no provisionamento da VM).
 
 ### 6.1 Como executar na VM
 
-Rodar **todos os testes**:
+Rodar **todos os testes** (na raiz do clone, não dentro de `app/`):
 
 ```bash
 cd /opt/lancamento
+git pull
 chmod +x scripts/run-tests-all.sh scripts/run-tests-by-type.sh
 ./scripts/run-tests-all.sh
+```
+
+Se o Maven falhar e você precisar ver o log completo:
+
+```bash
+LANCAMENTO_TESTS_VERBOSE=1 ./scripts/run-tests-all.sh
 ```
 
 Rodar **por tipo** (enum/validation/business/mock/db/auth/pdf):
