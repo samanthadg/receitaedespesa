@@ -53,11 +53,17 @@ public class UsuarioController {
       return "redirect:/usuarios";
     }
 
+    String emailNorm = normalizeEmail(email);
+    if (emailNorm == null) {
+      redirectAttributes.addFlashAttribute("erro", "O e-mail é obrigatório.");
+      return "redirect:/usuarios";
+    }
+
     try {
       Usuario u = new Usuario();
       u.setNome(nome.trim());
       u.setLogin(loginNorm);
-      u.setEmail(normalizeEmail(email));
+      u.setEmail(emailNorm);
       u.setSenha(senha);
       u.setSituacao(situacao.trim());
       usuarioRepository.save(u);
@@ -104,7 +110,12 @@ public class UsuarioController {
     try {
       usuario.setNome(nome.trim());
       usuario.setLogin(loginNorm);
-      usuario.setEmail(normalizeEmail(email));
+      String emailNorm = normalizeEmail(email);
+      if (emailNorm == null) {
+        redirectAttributes.addFlashAttribute("erro", "O e-mail é obrigatório.");
+        return "redirect:/usuarios/" + id + "/editar";
+      }
+      usuario.setEmail(emailNorm);
       if (senha != null && !senha.isBlank()) {
         usuario.setSenha(senha);
       }
