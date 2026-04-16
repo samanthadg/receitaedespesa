@@ -23,6 +23,7 @@ class LancamentoRepositoryJpaTest {
 
   @Autowired private LancamentoRepository repository;
 
+  /** Persiste um lançamento no H2 e confere findById e campo descricao. */
   @Test
   void repositorio_salvarEBuscar_lancamentoEncontrado() {
     Lancamento saved = repository.save(novoLancamento("Persistido", Situacao.EFETIVADO));
@@ -34,6 +35,7 @@ class LancamentoRepositoryJpaTest {
     assertEquals("Persistido", found.getDescricao());
   }
 
+  /** findBySituacao(EFETIVADO) deve retornar apenas linhas com essa situação. */
   @Test
   void repositorio_listarPorSituacao_retornaApenasEfetivados() {
     repository.save(novoLancamento("A", Situacao.EFETIVADO));
@@ -46,6 +48,7 @@ class LancamentoRepositoryJpaTest {
     assertEquals(1, efetivados.size());
   }
 
+  /** Limpa a tabela, insere quatro registros e valida count() do repositório. */
   @Test
   void repositorio_contarLancamentos_retornaTotalCorreto() {
     repository.deleteAll();

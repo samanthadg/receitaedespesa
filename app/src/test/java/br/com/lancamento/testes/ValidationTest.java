@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 class ValidationTest {
   private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
+  /** Descrição em branco em Lancamento deve gerar violações Bean Validation. */
   @Test
   void lancamento_descricaoVazia_naoDeveSerValido() {
     Lancamento l = baseLancamento();
@@ -25,6 +26,7 @@ class ValidationTest {
     assertFalse(violations.isEmpty());
   }
 
+  /** Valor negativo em Lancamento não deve passar na validação. */
   @Test
   void lancamento_valorNegativo_naoDeveSerValido() {
     Lancamento l = baseLancamento();
@@ -33,6 +35,7 @@ class ValidationTest {
     assertFalse(violations.isEmpty());
   }
 
+  /** dataLancamento null deve ser rejeitada pelas constraints do Lancamento. */
   @Test
   void lancamento_dataNula_naoDeveSerValido() {
     Lancamento l = baseLancamento();
@@ -41,6 +44,7 @@ class ValidationTest {
     assertFalse(violations.isEmpty());
   }
 
+  /** Login vazio em Usuario deve violar validação (campo obrigatório/tamanho). */
   @Test
   void usuario_loginVazio_naoDeveSerValido() {
     Usuario u = baseUsuario();
@@ -49,6 +53,7 @@ class ValidationTest {
     assertFalse(violations.isEmpty());
   }
 
+  /** E-mail acima do @Size configurado na entidade Usuario deve falhar na validação. */
   @Test
   void usuario_emailAcimaDe160Chars_naoDeveSerValido() {
     Usuario u = baseUsuario();

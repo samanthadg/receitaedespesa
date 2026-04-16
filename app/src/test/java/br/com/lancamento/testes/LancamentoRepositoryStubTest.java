@@ -17,6 +17,7 @@ import org.mockito.Mockito;
 @Tag("mock")
 class LancamentoRepositoryStubTest {
 
+  /** Mock de save atribui ID ao objeto; verifica que a entidade retornada não fica sem id. */
   @Test
   void lancamentoRepo_salvar_retornaEntidade() {
     LancamentoRepository stub = Mockito.mock(LancamentoRepository.class);

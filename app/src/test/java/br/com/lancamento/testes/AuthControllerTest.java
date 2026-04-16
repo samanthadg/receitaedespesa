@@ -26,6 +26,7 @@ class AuthControllerTest {
 
   @MockBean private UsuarioRepository usuarioRepository;
 
+  /** Simula login OK: repositório devolve usuário e o POST /login deve redirecionar para /lancamentos. */
   @Test
   void login_credenciaisValidas_redirecionaParaHome() throws Exception {
     Usuario u = new Usuario();
@@ -41,6 +42,7 @@ class AuthControllerTest {
         .andExpect(redirectedUrl("/lancamentos"));
   }
 
+  /** Simula senha errada: repositório vazio e a resposta deve ser a tela de login com atributo de erro. */
   @Test
   void login_credenciaisInvalidas_retornaMensagemDeErro() throws Exception {
     when(usuarioRepository.findByLoginAndSenha("admin", "errada")).thenReturn(Optional.empty());

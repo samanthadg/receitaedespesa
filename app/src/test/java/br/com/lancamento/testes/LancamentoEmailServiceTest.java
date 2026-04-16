@@ -21,6 +21,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 @Tag("mock")
 class LancamentoEmailServiceTest {
 
+  /** Com envio habilitado, onCreate deve chamar send uma vez no JavaMailSender (mock). */
   @Test
   void emailService_criarLancamento_enviaEmail() {
     JavaMailSender mailSender = Mockito.mock(JavaMailSender.class);
@@ -42,6 +43,7 @@ class LancamentoEmailServiceTest {
     verify(mailSender, times(1)).send(any(MimeMessage.class));
   }
 
+  /** Com flag desabilitada, onCreate não deve invocar send no remetente mockado. */
   @Test
   void emailService_mailDesabilitado_naoEnviaEmail() {
     JavaMailSender mailSender = Mockito.mock(JavaMailSender.class);

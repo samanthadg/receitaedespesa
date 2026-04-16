@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 @Tag("pdf")
 class LancamentoPdfExporterTest {
 
+  /** Exporta lista mínima para PDF e verifica que há bytes gerados (PDF não vazio). */
   @Test
   void pdfExporter_gerarPdf_naoRetornaNulo() {
     byte[] pdf =

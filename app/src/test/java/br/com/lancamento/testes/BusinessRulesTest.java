@@ -17,11 +17,13 @@ import org.junit.jupiter.api.Test;
 class BusinessRulesTest {
   private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
+  /** Garante que literal inexistente em Situacao dispara IllegalArgumentException (valueOf). */
   @Test
   void lancamento_situacaoInvalida_lancaExcecao() {
     assertThrows(IllegalArgumentException.class, () -> Situacao.valueOf("SITUACAO_INVALIDA"));
   }
 
+  /** Lancamento com valor zero deve violar as constraints Bean Validation da entidade. */
   @Test
   void lancamento_valorZero_naoDeveSerValido() {
     Lancamento l = baseLancamento();
@@ -30,6 +32,7 @@ class BusinessRulesTest {
     assertFalse(violations.isEmpty());
   }
 
+  /** Tipo de lançamento obrigatório: null deve produzir violações de validação. */
   @Test
   void lancamento_tipoNulo_naoDeveSerValido() {
     Lancamento l = baseLancamento();
