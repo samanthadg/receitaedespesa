@@ -2,13 +2,84 @@ const express = require('express');
 const { exec, spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 const WORK_DIR = '/opt/lancamento';
 const CHANGE_LOG_PATH = path.join(WORK_DIR, 'change_log.json');
 
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
+const sessions = new Map();
+
 app.use(express.json());
+
+// Parse cookies
+app.use((req, res, next) => {
+  const cookieHeader = req.headers.cookie || '';
+  req.cookies = {};
+  cookieHeader.split(';').forEach(c => {
+    const [k, v] = c.trim().split('=');
+    if (k) req.cookies[k] = v;
+  });
+  next();
+});
+
+// Login endpoint (no auth required)
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    const token = crypto.randomBytes(32).toString('hex');
+    sessions.set(token, { user: username, created: Date.now() });
+    res.setHeader('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Strict`);
+    return res.json({ success: true });
+  }
+  res.status(401).json({ success: false, error: 'Usuário ou senha inválidos.' });
+});
+
+// Logout endpoint
+app.post('/api/logout', (req, res) => {
+  const token = req.cookies.session;
+  if (token) sessions.delete(token);
+  res.setHeader('Set-Cookie', 'session=; Path=/; HttpOnly; Max-Age=0');
+  res.json({ success: true });
+});
+
+// Serve login page
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Root redirect
+app.get('/', (req, res) => {
+  const token = req.cookies.session;
+  if (token && sessions.has(token)) {
+    return res.redirect('/dashboard.html');
+  }
+  res.redirect('/login.html');
+});
+
+// Auth middleware for everything except login
+function requireAuth(req, res, next) {
+  const token = req.cookies.session;
+  if (token && sessions.has(token)) {
+    return next();
+  }
+  if (req.path.startsWith('/api/')) {
+    return res.status(401).json({ error: 'Não autenticado' });
+  }
+  res.redirect('/login.html');
+}
+
+// Protect dashboard and API
+app.use('/dashboard.html', requireAuth, express.static(path.join(__dirname, 'public')));
+app.get('/dashboard.html', requireAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+app.use('/api', requireAuth);
+
+// Serve static files (login.html accessible without auth)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Helper to check if file exists

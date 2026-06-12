@@ -37,6 +37,7 @@ services:
       DB_PASSWORD: lancamento_pass
       PORT: 8080
       APP_MAIL_ENABLED: "false"
+      APP_ENV: "Homologação"
     depends_on:
       - homolog-db
     restart: always
@@ -66,6 +67,7 @@ services:
       DB_PASSWORD: lancamento_pass
       PORT: 8080
       APP_MAIL_ENABLED: "false"
+      APP_ENV: "Produção"
     depends_on:
       - prod-db
     restart: always

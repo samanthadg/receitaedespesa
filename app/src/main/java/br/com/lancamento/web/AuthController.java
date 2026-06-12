@@ -2,6 +2,7 @@ package br.com.lancamento.web;
 
 import br.com.lancamento.repo.UsuarioRepository;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,12 +15,16 @@ public class AuthController {
 
   private final UsuarioRepository usuarioRepository;
 
+  @Value("${APP_ENV:Produção}")
+  private String appEnv;
+
   public AuthController(UsuarioRepository usuarioRepository) {
     this.usuarioRepository = usuarioRepository;
   }
 
   @GetMapping("/login")
-  public String loginPage() {
+  public String loginPage(Model model) {
+    model.addAttribute("appEnv", appEnv);
     return "auth/login";
   }
 
@@ -29,6 +34,7 @@ public class AuthController {
       @RequestParam String senha,
       HttpSession session,
       Model model) {
+    model.addAttribute("appEnv", appEnv);
     var user = usuarioRepository.findByLoginAndSenha(login, senha).orElse(null);
     if (user == null) {
       model.addAttribute("error", "Login ou senha inválidos.");
@@ -48,4 +54,3 @@ public class AuthController {
     return "redirect:/login";
   }
 }
-
