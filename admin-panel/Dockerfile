@@ -1,5 +1,5 @@
 FROM node:20-alpine
-RUN apk add --no-cache curl tar bash && \
+RUN apk add --no-cache curl tar bash git && \
     curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-26.1.1.tgz | tar -xz -C /tmp && \
     mv /tmp/docker/docker /usr/local/bin/docker && \
     rm -rf /tmp/docker && \
