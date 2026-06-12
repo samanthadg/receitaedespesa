@@ -3,28 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lançamentos</title>
+    <title th:text="'Lançamentos - ' + ${appEnv}">Lançamentos</title>
     <style>
       :root {
-        --bg: #f3f6fb;
-        --card: #ffffff;
-        --text: #1f2a37;
-        --muted: #5b6977;
-        --border: #dde6f0;
-        --shadow: 0 10px 26px rgba(16, 24, 40, 0.08);
-        --shadow-sm: 0 4px 14px rgba(16, 24, 40, 0.06);
-        --primary: #1b67b1;
-        --primary-700: #155a9b;
-        --primary-50: rgba(27, 103, 177, 0.12);
-        --danger: #8a1f1f;
+        --bg: #0f172a;
+        --card: rgba(30, 41, 59, 0.85);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+        --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.2);
+        --primary: #10b981;
+        --primary-700: #059669;
+        --primary-50: rgba(16, 185, 129, 0.15);
+        --danger: #ef4444;
       }
       body {
         margin: 0;
         font-family: "Segoe UI", Tahoma, Arial, sans-serif;
         font-size: 15px;
-        background: radial-gradient(1200px 700px at 10% -10%, rgba(27, 103, 177, 0.14), transparent 55%),
-          radial-gradient(1000px 650px at 110% 0%, rgba(14, 165, 233, 0.12), transparent 52%),
-          var(--bg);
+        background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
+          var(--bg); background-attachment: fixed;
         color: var(--text);
       }
       .wrap {
@@ -74,8 +73,8 @@
         gap: 10px;
         align-items: end;
         padding: 14px;
-        border-bottom: 1px solid #edf1f5;
-        background: linear-gradient(180deg, #ffffff, #fbfdff);
+        border-bottom: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.5);
       }
       .toolbar .filters {
         display: grid;
@@ -109,7 +108,7 @@
         border-radius: 6px;
         padding: 11px 11px;
         font-size: 15px;
-        background: #fff;
+        background: rgba(15, 23, 42, 0.6);
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
       }
       .field input:focus,
@@ -146,7 +145,7 @@
       }
       .btn-secondary {
         border: 1px solid #d7dde4;
-        background: #fff;
+        background: rgba(15, 23, 42, 0.6);
         color: #1f2a37;
         border-radius: 6px;
         padding: 10px 13px;
@@ -164,7 +163,7 @@
       th,
       td {
         padding: 12px 12px;
-        border-bottom: 1px solid #edf1f5;
+        border-bottom: 1px solid var(--border);
         text-align: left;
         font-size: 15px;
       }
@@ -192,7 +191,7 @@
         padding: 2px 8px;
         border-radius: 999px;
         border: 1px solid #d7dde4;
-        background: #fff;
+        background: rgba(15, 23, 42, 0.6);
         font-size: 13px;
         color: #334e68;
       }
@@ -256,7 +255,7 @@
         padding: 12px 14px;
         box-shadow: 0 18px 50px rgba(16, 24, 40, 0.18);
         border: 1px solid var(--border);
-        background: #fff;
+        background: rgba(15, 23, 42, 0.6);
         color: var(--text);
         transform: translateY(-8px);
         opacity: 0;
@@ -294,7 +293,7 @@
       }
       .linkbtn {
         border: 1px solid #d7dde4;
-        background: #fff;
+        background: rgba(15, 23, 42, 0.6);
         color: var(--text);
         border-radius: 6px;
         padding: 10px 13px;
@@ -357,7 +356,7 @@
         background: rgba(15, 23, 42, 0.55);
       }
       .modal {
-        background: #fff;
+        background: rgba(15, 23, 42, 0.6);
       }
       .modal-header {
         display: flex;
@@ -365,7 +364,7 @@
         justify-content: space-between;
         gap: 12px;
         padding: 14px 14px 10px;
-        border-bottom: 1px solid #edf1f5;
+        border-bottom: 1px solid var(--border);
       }
       .modal-title {
         font-weight: 700;
@@ -374,7 +373,7 @@
       }
       .modal-close {
         border: 1px solid #d7dde4;
-        background: #fff;
+        background: rgba(15, 23, 42, 0.6);
         color: #1f2a37;
         border-radius: 6px;
         padding: 6px 10px;

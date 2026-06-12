@@ -9,8 +9,6 @@ const PORT = process.env.PORT || 8080;
 const WORK_DIR = '/opt/lancamento';
 const CHANGE_LOG_PATH = path.join(WORK_DIR, 'change_log.json');
 
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123';
 const sessions = new Map();
 
 app.use(express.json());
@@ -26,16 +24,33 @@ app.use((req, res, next) => {
   next();
 });
 
-// Login endpoint (no auth required)
+// Login endpoint - validates against production database
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  if (username === ADMIN_USER && password === ADMIN_PASS) {
-    const token = crypto.randomBytes(32).toString('hex');
-    sessions.set(token, { user: username, created: Date.now() });
-    res.setHeader('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Strict`);
-    return res.json({ success: true });
+  if (!username || !password) {
+    return res.status(400).json({ success: false, error: 'Usuário e senha são obrigatórios.' });
   }
-  res.status(401).json({ success: false, error: 'Usuário ou senha inválidos.' });
+
+  // Query prod-db to validate user credentials
+  const query = `SELECT login, nome FROM usuario WHERE login='${username.replace(/'/g, "''")}' AND senha='${password.replace(/'/g, "''")}' AND situacao='ATIVO' LIMIT 1`;
+  const cmd = `docker exec prod-db psql -U lancamento_user -d lancamento_db -t -A -c "${query}"`;
+
+  exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: 'Erro ao conectar com o banco de produção.' });
+    }
+
+    const result = stdout.trim();
+    if (result) {
+      const [login, nome] = result.split('|');
+      const token = crypto.randomBytes(32).toString('hex');
+      sessions.set(token, { user: login, nome: nome || login, created: Date.now() });
+      res.setHeader('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Strict`);
+      return res.json({ success: true, user: nome || login });
+    }
+
+    res.status(401).json({ success: false, error: 'Usuário ou senha inválidos.' });
+  });
 });
 
 // Logout endpoint
