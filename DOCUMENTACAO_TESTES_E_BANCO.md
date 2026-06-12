@@ -1,0 +1,123 @@
+# Guia de Apresentação e Testes (CI/CD DevOps)
+
+Este guia detalha o passo a passo de como demonstrar o funcionamento dos ambientes de Integração, Homologação e Produção em Docker na VM da Univates.
+
+---
+
+## 1. Parar e Iniciar Tudo com Um Só Comando
+
+### Parar Tudo
+Para parar todos os ambientes de uma vez, execute no terminal da VM:
+```bash
+cd /opt/lancamento
+sudo docker compose down
+```
+*Validação:* Tente acessar `http://177.44.248.120:8080` (Painel), `8081` (Homolog) e `8082` (Prod) e verifique que estão fora do ar.
+
+### Iniciar Tudo
+Para iniciar todos os containers com um único comando, execute:
+```bash
+cd /opt/lancamento
+sudo docker compose up -d
+```
+*Validação:* Execute `sudo docker ps` e mostre os 5 containers ativos:
+1. `lancamento-admin` (Painel DevOps na porta 8080)
+2. `homolog-app` (App Homologação na porta 8081)
+3. `homolog-db` (Banco PostgreSQL na porta 5433)
+4. `prod-app` (App Produção na porta 8082)
+5. `prod-db` (Banco PostgreSQL na porta 5434)
+
+---
+
+## 2. Independência dos Bancos de Dados
+
+1. Acesse o ambiente de **Homologação** em `http://177.44.248.120:8081/login`
+   - Credenciais: Usuário `admin` / Senha `123456`
+2. Cadastre um novo lançamento (ex: "Jantar de Negócios", Valor `150.00`, RECEITA/DESPESA).
+3. Acesse o ambiente de **Produção** em `http://177.44.248.120:8082/login`
+   - Use as mesmas credenciais.
+4. Demonstre que o lançamento cadastrado em Homologação **não aparece** na lista de Produção, comprovando que os bancos de dados são totalmente independentes e isolados.
+
+---
+
+## 3. Fluxo de Atualização (Alteração de Palavra e Nova Tabela)
+
+### Passo 1: Alterar uma palavra na aplicação
+No terminal da VM (ou via editor), edite o arquivo HTML da listagem de lançamentos:
+```bash
+sudo nano /opt/lancamento/app/src/main/resources/templates/lancamentos/lista.html
+```
+Localize a tag `<h1>Lançamentos</h1>` (por volta da linha 48) e altere para:
+```html
+<h1>Controle Financeiro (Homolog)</h1>
+```
+
+### Passo 2: Criar uma nova tabela no banco de dados (Flyway Migration)
+Crie um novo arquivo de migração do Flyway para criar a tabela de logs de auditoria:
+```bash
+sudo nano /opt/lancamento/app/src/main/resources/db/migration/V3__criar_tabela_auditoria.sql
+```
+Adicione o seguinte conteúdo SQL:
+```sql
+CREATE TABLE IF NOT EXISTS auditoria (
+  id BIGSERIAL PRIMARY KEY,
+  data_hora TIMESTAMP NOT NULL,
+  acao VARCHAR(100) NOT NULL
+);
+```
+
+### Passo 3: Executar o Pipeline de Integração e Deploy em Homologação
+1. Acesse o **Painel Admin** em `http://177.44.248.120:8080`.
+2. No card **Controle de Mudanças (Fase A)**, preencha:
+   - Autor: `univates`
+   - Descrição: `Alterado titulo principal e criada tabela de auditoria`
+   - Clique em **Registrar Mudança**.
+3. No card **Pipeline**, clique em **Rodar Integração (CI)**.
+   - Isso executará a compilação, os 20 testes unitários e a análise de qualidade (PMD/JaCoCo). Acompanhe os logs em tempo real no console do painel.
+4. Assim que o CI terminar com sucesso, clique em **Deploy Homologação**.
+   - Isso recriará o container de homologação com a nova imagem.
+5. Acesse `http://177.44.248.120:8081` e mostre o novo título: **Controle Financeiro (Homolog)**.
+6. Mostre que em Produção (`http://177.44.248.120:8082`) a palavra **não mudou** e a tabela de auditoria ainda não existe no banco de Produção.
+
+### Passo 4: Atualizar o ambiente de Produção
+1. No Painel Admin (`http://177.44.248.120:8080`), clique em **Deploy Produção**.
+2. Confirme a promoção na janela de confirmação.
+3. Acesse `http://177.44.248.120:8082` e verifique que o título agora foi atualizado em Produção.
+4. Para provar que a nova tabela de auditoria foi criada automaticamente pelo Flyway no banco de Produção, execute na VM:
+   ```bash
+   sudo docker exec -it prod-db psql -U lancamento_user -d lancamento_db -c "\dt"
+   ```
+   *Resultado esperado:* A tabela `auditoria` deve aparecer listada junto com `usuario`, `lancamento` e `schema_version`.
+
+---
+
+## 4. Quebrar os Testes e a Qualidade de Código
+
+Para demonstrar que o pipeline de integração funciona e bloqueia deploys inválidos, podemos introduzir falhas:
+
+### Quebrar Teste Unitário
+1. Edite a classe de entidade `Lancamento.java`:
+   ```bash
+   sudo nano /opt/lancamento/app/src/main/java/br/com/lancamento/domain/Lancamento.java
+   ```
+2. Mude a anotação do valor mínimo do lançamento de `@Min(0)` para `@Min(100)` ou altere a lógica de algum método de validação.
+3. No Painel Admin, clique em **Rodar Integração (CI)**.
+4. O Maven falhará na execução dos testes e o painel exibirá:
+   - **Passaram:** menor que 20.
+   - Mensagem de falha destacada em vermelho no terminal.
+
+### Quebrar Qualidade (PMD)
+1. Crie uma classe java inútil ou com problemas de estilo no código:
+   ```bash
+   sudo nano /opt/lancamento/app/src/main/java/br/com/lancamento/domain/ClasseInutil.java
+   ```
+2. Adicione imports não utilizados e deixe a classe vazia:
+   ```java
+   package br.com.lancamento.domain;
+   import java.util.ArrayList;
+   import java.util.List;
+   public class ClasseInutil {
+       // classe vazia viola regras do PMD
+   }
+   ```
+3. Rode a Integração pelo painel e mostre que a quantidade de **Avisos PMD** subiu.

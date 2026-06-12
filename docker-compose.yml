@@ -1,28 +1,75 @@
 services:
-  db:
+  admin:
+    build:
+      context: ./admin-panel
+    container_name: lancamento-admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/lancamento:/opt/lancamento
+    environment:
+      - PORT=8080
+    restart: always
+
+  homolog-db:
     image: postgres:18
+    container_name: homolog-db
     environment:
       POSTGRES_DB: lancamento_db
       POSTGRES_USER: lancamento_user
       POSTGRES_PASSWORD: lancamento_pass
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - homolog_pgdata:/var/lib/postgresql
+    restart: always
 
-  app:
+  homolog-app:
     build:
       context: ./app
+    container_name: homolog-app
+    ports:
+      - "8081:8080"
     environment:
-      DB_URL: jdbc:postgresql://db:5432/lancamento_db
+      DB_URL: jdbc:postgresql://homolog-db:5432/lancamento_db
       DB_USER: lancamento_user
       DB_PASSWORD: lancamento_pass
       PORT: 8080
-    ports:
-      - "8080:8080"
+      APP_MAIL_ENABLED: "false"
     depends_on:
-      - db
+      - homolog-db
+    restart: always
+
+  prod-db:
+    image: postgres:18
+    container_name: prod-db
+    environment:
+      POSTGRES_DB: lancamento_db
+      POSTGRES_USER: lancamento_user
+      POSTGRES_PASSWORD: lancamento_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - prod_pgdata:/var/lib/postgresql
+    restart: always
+
+  prod-app:
+    build:
+      context: ./app
+    container_name: prod-app
+    ports:
+      - "8082:8080"
+    environment:
+      DB_URL: jdbc:postgresql://prod-db:5432/lancamento_db
+      DB_USER: lancamento_user
+      DB_PASSWORD: lancamento_pass
+      PORT: 8080
+      APP_MAIL_ENABLED: "false"
+    depends_on:
+      - prod-db
+    restart: always
 
 volumes:
-  pgdata:
-
+  homolog_pgdata:
+  prod_pgdata:

@@ -19,12 +19,11 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
   flyway:
-    enabled: false
+    enabled: true
+    baseline-on-migrate: true
   sql:
     init:
-      mode: always
-      schema-locations: classpath:schema.sql
-      data-locations: classpath:data.sql
+      mode: never
   mail:
     host: ${SMTP_HOST:smtp.gmail.com}
     port: ${SMTP_PORT:587}
@@ -47,4 +46,3 @@ app:
 logging:
   level:
     org.hibernate.SQL: warn
-

@@ -1,0 +1,12 @@
+{
+  "name": "lancamento-admin-panel",
+  "version": "1.0.0",
+  "description": "Painel de controle de CI/CD para o projeto Lancamento",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
