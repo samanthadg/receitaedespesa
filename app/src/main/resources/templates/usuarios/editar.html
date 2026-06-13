@@ -5,11 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title th:text="'Editar Usuário - ' + ${appEnv}">Editar</title>
     <style>
+      :root {
+        --bg: #0f172a;
+        --card: rgba(30, 41, 59, 0.85);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+        --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.2);
+        --primary: #10b981;
+        --primary-700: #059669;
+        --primary-50: rgba(16, 185, 129, 0.15);
+        --danger: #ef4444;
+      }
       body {
         margin: 0;
         font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-        background: #eef2f6;
-        color: #22303c;
+        background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
+        background-attachment: fixed;
+        color: var(--text);
       }
       .wrap {
         max-width: 900px;
@@ -20,7 +34,7 @@
         display: flex;
         justify-content: space-between;
         gap: 12px;
-        align-items: baseline;
+        align-items: center;
         margin-bottom: 14px;
       }
       h1 {
@@ -30,15 +44,15 @@
         letter-spacing: 0.1px;
       }
       .subtitle {
-        color: #5b6977;
+        color: var(--muted);
         font-size: 13px;
       }
       .card {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid #d3dce6;
+        background: var(--card);
+        border: 1px solid var(--border);
         border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+        box-shadow: var(--shadow);
       }
       .grid {
         display: grid;
@@ -49,18 +63,26 @@
       .field label {
         display: block;
         font-size: 12px;
-        color: #52606d;
+        color: var(--muted);
         margin-bottom: 4px;
       }
       .field input,
       .field select {
         width: 100%;
         box-sizing: border-box;
-        border: 1px solid #c7d2de;
+        border: 1px solid var(--border);
         border-radius: 6px;
         padding: 8px 9px;
         font-size: 13px;
         background: rgba(15, 23, 42, 0.6);
+        color: var(--text);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .field input:focus,
+      .field select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-50);
       }
       .row {
         display: flex;
@@ -70,8 +92,8 @@
         flex-wrap: wrap;
       }
       .btn-primary {
-        border: 1px solid #14579b;
-        background: #1b67b1;
+        border: 1px solid var(--border);
+        background: var(--primary);
         color: #fff;
         border-radius: 6px;
         padding: 8px 11px;
@@ -79,10 +101,13 @@
         font-weight: 600;
         cursor: pointer;
       }
+      .btn-primary:hover {
+        background: var(--primary-700);
+      }
       .linkbtn {
-        border: 1px solid #d7dde4;
+        border: 1px solid var(--border);
         background: rgba(15, 23, 42, 0.6);
-        color: #1f2a37;
+        color: var(--text);
         border-radius: 6px;
         padding: 8px 11px;
         font-size: 13px;
@@ -90,34 +115,52 @@
         text-decoration: none;
         display: inline-block;
       }
-      .muted {
-        color: #52606d;
-        font-size: 12px;
-      }
-      .btn-primary:hover {
-        background: #155a9b;
-      }
       .linkbtn:hover {
-        background: #f7f9fb;
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
       }
       @media (max-width: 760px) {
         .grid {
           grid-template-columns: 1fr;
         }
       }
-      /* edit-form-contrast-fix */
-      input, select, textarea { background: rgba(15, 23, 42, 0.6); color: #f8fafc; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; }
-      input:focus, select:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); outline: none; }
-      select option { background: #1e293b; color: #f8fafc; }
-      a { color: #60a5fa; }
-      label { color: #94a3b8; }
+      .badge-env {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        line-height: 1;
+      }
+      .badge-env.homolog {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .badge-env.prod {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <header>
         <div>
-          <h1>Editar usuário</h1>
+          <h1 style="display: inline-flex; align-items: center; gap: 10px;">
+            <span>Editar usuário</span>
+            <span th:if="${appEnv != null}" 
+                  th:classappend="${appEnv == 'Produção' ? 'prod' : 'homolog'}" 
+                  class="badge-env" 
+                  th:text="${appEnv}">Produção</span>
+          </h1>
           <div class="subtitle" th:text="${'ID ' + usuario.id}">ID</div>
         </div>
         <a class="linkbtn" href="/usuarios">Voltar</a>

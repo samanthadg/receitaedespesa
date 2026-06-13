@@ -5,13 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title th:text="'Usuários - ' + ${appEnv}">Usuários</title>
     <style>
+      :root {
+        --bg: #0f172a;
+        --card: rgba(30, 41, 59, 0.85);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+        --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.2);
+        --primary: #10b981;
+        --primary-700: #059669;
+        --primary-50: rgba(16, 185, 129, 0.15);
+        --danger: #ef4444;
+      }
       body {
         margin: 0;
         font-family: "Segoe UI", Tahoma, Arial, sans-serif;
         font-size: 15px;
         background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
-          #f3f6fb;
-        color: #1f2a37;
+        background-attachment: fixed;
+        color: var(--text);
       }
       .wrap {
         max-width: 1100px;
@@ -43,42 +56,52 @@
         letter-spacing: 0.1px;
       }
       .subtitle {
-        color: #5b6977;
+        color: var(--muted);
         font-size: 15px;
       }
       .card {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid #dde6f0;
+        background: var(--card);
+        border: 1px solid var(--border);
         border-radius: 8px;
         overflow: hidden;
         margin-bottom: 12px;
-        box-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);
+        box-shadow: var(--shadow-sm);
       }
       .form-grid {
         display: grid;
         grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
         gap: 12px;
         padding: 14px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.5);
       }
       .field label {
         display: block;
         font-size: 14px;
-        color: #52606d;
+        color: var(--muted);
         margin-bottom: 4px;
       }
       .field input,
       .field select {
         width: 100%;
         box-sizing: border-box;
-        border: 1px solid #c7d2de;
+        border: 1px solid var(--border);
         border-radius: 6px;
         padding: 11px 11px;
         font-size: 15px;
         background: rgba(15, 23, 42, 0.6);
+        color: var(--text);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .field input:focus,
+      .field select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--primary-50);
       }
       .btn-primary {
-        border: 1px solid #14579b;
-        background: #1b67b1;
+        border: 1px solid var(--border);
+        background: var(--primary);
         color: #fff;
         border-radius: 6px;
         padding: 10px 13px;
@@ -86,20 +109,26 @@
         font-weight: 600;
         cursor: pointer;
       }
+      .btn-primary:hover {
+        background: var(--primary-700);
+      }
       .btn-danger {
-        border: 1px solid #e0b3b3;
-        background: #fff6f6;
-        color: #8a1f1f;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
         border-radius: 6px;
         padding: 10px 13px;
         font-size: 15px;
         font-weight: 600;
         cursor: pointer;
       }
+      .btn-danger:hover {
+        background: rgba(239, 68, 68, 0.25);
+      }
       .linkbtn {
-        border: 1px solid #d7dde4;
+        border: 1px solid var(--border);
         background: rgba(15, 23, 42, 0.6);
-        color: #1f2a37;
+        color: var(--text);
         border-radius: 6px;
         padding: 10px 13px;
         font-size: 14px;
@@ -111,34 +140,36 @@
         line-height: 1.2;
         font-weight: 600;
       }
-
+      .linkbtn:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
       .linkbtn.edit {
-        border-color: rgba(27, 103, 177, 0.35);
-        background: rgba(27, 103, 177, 0.08);
-        color: #155a9b;
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.1);
+        color: #34d399;
       }
       .linkbtn.edit:hover {
-        background: rgba(27, 103, 177, 0.12);
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
       }
-
       .tag {
         display: inline-block;
         padding: 2px 8px;
         border-radius: 999px;
-        border: 1px solid #d7dde4;
+        border: 1px solid var(--border);
         background: rgba(15, 23, 42, 0.6);
         font-size: 13px;
-        color: #334e68;
+        color: var(--muted);
       }
       .tag.ativo {
-        border-color: #b7e3c0;
-        background: #eef9f1;
-        color: #1e6b2b;
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.1);
+        color: #34d399;
       }
       .tag.inativo {
-        border-color: #d7dde4;
-        background: #f3f4f6;
-        color: #334e68;
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
       }
       table {
         width: 100%;
@@ -152,10 +183,10 @@
         font-size: 15px;
       }
       th {
-        background: linear-gradient(180deg, #f7faff, #f3f7fd);
-        color: #2f4860;
+        background: rgba(15, 23, 42, 0.4);
+        color: var(--muted);
         font-weight: 600;
-        border-bottom: 1px solid #dfe7ef;
+        border-bottom: 1px solid var(--border);
       }
       th a {
         color: inherit;
@@ -164,6 +195,24 @@
       th a:hover {
         text-decoration: underline;
       }
+      tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      tbody tr:nth-child(even) {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      tbody tr:nth-child(odd) {
+        background: transparent;
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      a {
+        color: #60a5fa;
+      }
+      a:hover {
+        color: #93bbfc;
+      }
       .alert {
         margin: 0 0 10px;
         padding: 10px 12px;
@@ -171,16 +220,15 @@
         font-size: 15px;
       }
       .alert.ok {
-        border: 1px solid #b7e3c0;
-        background: #eef9f1;
-        color: #1e6b2b;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
       }
       .alert.err {
-        border: 1px solid #f0c2c2;
-        background: #fff2f2;
-        color: #8a1f1f;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
       }
-
       .toast {
         position: fixed;
         top: 16px;
@@ -190,10 +238,10 @@
         max-width: min(420px, calc(100vw - 32px));
         border-radius: 10px;
         padding: 12px 14px;
-        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.18);
-        border: 1px solid #dde6f0;
-        background: rgba(15, 23, 42, 0.6);
-        color: #1f2a37;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text);
         transform: translateY(-8px);
         opacity: 0;
         transition: transform 180ms ease, opacity 180ms ease;
@@ -203,14 +251,14 @@
         opacity: 1;
       }
       .toast.ok {
-        border-color: #b7e3c0;
-        background: #eef9f1;
-        color: #1e6b2b;
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
       }
       .toast.err {
-        border-color: #f0c2c2;
-        background: #fff2f2;
-        color: #8a1f1f;
+        border-color: rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
       }
       .toast.out {
         transform: translateY(-8px);
@@ -218,7 +266,7 @@
       }
       footer {
         margin-top: 14px;
-        color: #6b7785;
+        color: var(--muted);
         font-size: 12px;
         display: flex;
         justify-content: space-between;
@@ -237,19 +285,20 @@
       .actions form {
         display: inline;
       }
-
       dialog {
-        border: none;
+        border: 1px solid var(--border);
+        background: #1e293b;
+        color: var(--text);
         border-radius: 10px;
         padding: 0;
         width: min(980px, calc(100vw - 24px));
-        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.28);
+        box-shadow: var(--shadow);
       }
       dialog::backdrop {
-        background: rgba(15, 23, 42, 0.55);
+        background: rgba(0, 0, 0, 0.6);
       }
       .modal {
-        background: rgba(15, 23, 42, 0.6);
+        background: transparent;
       }
       .modal-header {
         display: flex;
@@ -262,19 +311,19 @@
       .modal-title {
         font-weight: 700;
         font-size: 18px;
-        color: #1f2a37;
+        color: var(--text);
       }
       .modal-close {
-        border: 1px solid #d7dde4;
+        border: 1px solid var(--border);
         background: rgba(15, 23, 42, 0.6);
-        color: #1f2a37;
+        color: var(--text);
         border-radius: 6px;
         padding: 10px 13px;
         font-size: 14px;
         cursor: pointer;
       }
       .modal-close:hover {
-        background: #f7f9fb;
+        background: rgba(255, 255, 255, 0.08);
       }
       .modal-body {
         padding: 0;
@@ -284,50 +333,62 @@
         justify-content: end;
         gap: 10px;
         padding: 12px 14px 14px;
-        border-top: 1px solid #edf1f5;
+        border-top: 1px solid var(--border);
       }
-
       #addUserForm.form-grid {
         grid-template-columns: 2.2fr 1.4fr 2fr 1fr 1fr;
         gap: 14px;
         padding: 16px 16px 10px;
+        border-bottom: none;
+        background: transparent;
       }
       #addUserForm .field input,
       #addUserForm .field select {
         padding: 12px 12px;
         font-size: 16px;
       }
-
       @media (max-width: 820px) {
         .form-grid {
           grid-template-columns: 1fr;
         }
+        #addUserForm.form-grid {
+          grid-template-columns: 1fr;
+        }
       }
-      /* table-contrast-fix */
-      table { border-collapse: collapse; width: 100%; }
-      th { color: #94a3b8; }
-      td { color: #cbd5e1; }
-      tbody tr { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-      tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.04); }
-      tbody tr:nth-child(odd) { background: transparent; }
-      tbody tr:hover { background: rgba(255, 255, 255, 0.08); }
-      a { color: #60a5fa; }
-      a:hover { color: #93bbfc; }
-      .linkbtn { color: #10b981; }
-      .btn-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-      .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
-      select { background: rgba(15, 23, 42, 0.6); color: #f8fafc; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px; }
-      select option { background: #1e293b; color: #f8fafc; }
-      input[type="date"] { background: rgba(15, 23, 42, 0.6); color: #f8fafc; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; }
-      dialog, dialog .modal-content { background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1); }
-      dialog::backdrop { background: rgba(0,0,0,0.6); }
+      .badge-env {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        line-height: 1;
+      }
+      .badge-env.homolog {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .badge-env.prod {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <header>
         <div>
-          <h1>Usuários</h1>
+          <h1 style="display: inline-flex; align-items: center; gap: 10px;">
+            <span>Usuários</span>
+            <span th:if="${appEnv != null}" 
+                  th:classappend="${appEnv == 'Produção' ? 'prod' : 'homolog'}" 
+                  class="badge-env" 
+                  th:text="${appEnv}">Produção</span>
+          </h1>
           <div class="subtitle">Cadastro e manutenção de usuários do sistema</div>
         </div>
         <div class="header-actions">

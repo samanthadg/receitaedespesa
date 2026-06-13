@@ -432,13 +432,40 @@
       input[type="date"] { background: rgba(15, 23, 42, 0.6); color: #f8fafc; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; }
       dialog, dialog .modal-content { background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1); }
       dialog::backdrop { background: rgba(0,0,0,0.6); }
+      .badge-env {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        line-height: 1;
+      }
+      .badge-env.homolog {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .badge-env.prod {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <header>
         <div>
-          <h1>Listagem de lançamentos</h1>
+          <h1 style="display: inline-flex; align-items: center; gap: 10px;">
+            <span>Listagem de lançamentos</span>
+            <span th:if="${appEnv != null}" 
+                  th:classappend="${appEnv == 'Produção' ? 'prod' : 'homolog'}" 
+                  class="badge-env" 
+                  th:text="${appEnv}">Produção</span>
+          </h1>
           <div class="subtitle">Despesas e receitas cadastradas no banco</div>
         </div>
         <div class="header-actions">
