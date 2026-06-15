@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editar Usuário - <%= appEnv %></title>
+    <style>
+      :root { --bg: #0f172a; --card: rgba(30,41,59,0.85); --text: #f8fafc; --muted: #94a3b8; --border: rgba(255,255,255,0.08); --primary: #10b981; --primary-700: #059669; }
+      body { margin: 0; font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: radial-gradient(circle at top right, #1e1b4b, var(--bg)); background-attachment: fixed; color: var(--text); }
+      .wrap { max-width: 900px; margin: 30px auto; padding: 0 16px 44px; }
+      header { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 14px; }
+      h1 { margin: 0; font-size: 20px; font-weight: 700; }
+      .subtitle { color: var(--muted); font-size: 13px; }
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 10px 26px rgba(0,0,0,0.3); }
+      .grid { display: grid; grid-template-columns: 2fr 1fr 1.6fr 1fr 1fr; gap: 12px; padding: 14px; }
+      .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+      .field input, .field select { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 6px; padding: 8px 9px; font-size: 13px; background: rgba(15,23,42,0.6); color: var(--text); }
+      .row { display: flex; gap: 10px; padding: 0 14px 14px; align-items: center; flex-wrap: wrap; }
+      .btn-primary { border: 1px solid var(--border); background: var(--primary); color: #fff; border-radius: 6px; padding: 8px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
+      .linkbtn { border: 1px solid var(--border); background: rgba(15,23,42,0.6); color: var(--text); border-radius: 6px; padding: 8px 11px; font-size: 13px; text-decoration: none; display: inline-block; }
+      .muted { color: var(--muted); font-size: 12px; }
+      .badge-env { display: inline-flex; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+      .badge-env.homolog { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+      .badge-env.prod { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+      @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1 style="display:inline-flex;align-items:center;gap:10px;">
+            <span>Editar usuário</span>
+            <% if (appEnv) { %><span class="badge-env <%= appEnv === 'Produção' ? 'prod' : 'homolog' %>"><%= appEnv %></span><% } %>
+          </h1>
+          <div class="subtitle">ID <%= usuario.id %></div>
+        </div>
+        <a class="linkbtn" href="/usuarios">Voltar</a>
+      </header>
+      <div class="card">
+        <form method="post" action="/usuarios/<%= usuario.id %>">
+          <div class="grid">
+            <div class="field"><label for="nome">Nome</label><input id="nome" name="nome" required value="<%= usuario.nome %>" /></div>
+            <div class="field"><label for="login">Login</label><input id="login" name="login" required value="<%= usuario.login %>" /></div>
+            <div class="field"><label for="email">E-mail</label><input id="email" name="email" type="email" required value="<%= usuario.email || '' %>" placeholder="Ex.: maria@email.com" /></div>
+            <div class="field"><label for="senha">Senha</label><input id="senha" name="senha" type="password" /><div class="muted" style="margin-top:6px">Deixe em branco para manter a senha atual.</div></div>
+            <div class="field"><label for="situacao">Situação</label>
+              <select id="situacao" name="situacao">
+                <option value="ATIVO" <%= usuario.situacao === 'ATIVO' ? 'selected' : '' %>>ATIVO</option>
+                <option value="INATIVO" <%= usuario.situacao === 'INATIVO' ? 'selected' : '' %>>INATIVO</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn-primary" type="submit">Salvar</button>
+            <a class="linkbtn" href="/usuarios">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

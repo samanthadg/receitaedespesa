@@ -224,18 +224,15 @@ app.get('/api/pipeline', (req, res) => {
   let child;
   
   if (action === 'ci') {
-    sendLog('info', '🔄 Iniciando pipeline de CI (Compilação, Testes e Qualidade)...');
+    sendLog('info', '🔄 Iniciando pipeline de CI (Instalação, Testes e Cobertura)...');
     
-    // Roda Maven dentro de um container Docker para compilar, testar e verificar qualidade
     const command = 'docker';
     const args = [
       'run', '--rm',
-      '--network', 'lancamento_default',
       '-v', '/opt/lancamento/app:/workspace',
       '-w', '/workspace',
-      'maven:3.9-eclipse-temurin-21',
-      'mvn', 'clean', 'verify',
-      '-Dspring.flyway.enabled=false'
+      'node:20-alpine',
+      'sh', '-c', 'npm ci && npm test'
     ];
     
     sendLog('info', `Executando: ${command} ${args.join(' ')}`);
@@ -290,7 +287,7 @@ app.get('/api/pipeline', (req, res) => {
   });
 });
 
-// Helper para extrair estatísticas dos relatórios de teste (Surefire, Jacoco, PMD)
+// Helper para extrair estatísticas dos relatórios de teste (Jest)
 function extractStats() {
   const stats = {
     testsRun: 0,
@@ -303,83 +300,50 @@ function extractStats() {
     status: 'success'
   };
 
-  const surefireDir = path.join(WORK_DIR, 'app/target/surefire-reports');
-  const jacocoReport = path.join(WORK_DIR, 'app/target/site/jacoco/index.html');
-  const pmdReport = path.join(WORK_DIR, 'app/target/pmd.xml');
+  const coverageSummary = path.join(WORK_DIR, 'app/coverage/coverage-summary.json');
 
-  // 1. Ler relatórios Surefire
-  if (fileExists(surefireDir)) {
-    const files = fs.readdirSync(surefireDir);
-    files.forEach(file => {
-      if (file.startsWith('TEST-') && file.endsWith('.xml')) {
-        const content = fs.readFileSync(path.join(surefireDir, file), 'utf8');
-        
-        // Extrair atributos do testsuite (ordem independente)
-        const getAttr = (str, attr) => {
-          const m = str.match(new RegExp(attr + '="(\\d+)"'));
-          return m ? parseInt(m[1], 10) : 0;
-        };
-        const suiteTag = content.match(/<testsuite[^>]+>/);
-        if (suiteTag) {
-          stats.testsRun += getAttr(suiteTag[0], 'tests');
-          stats.failures += getAttr(suiteTag[0], 'failures');
-          stats.errors += getAttr(suiteTag[0], 'errors');
-          stats.skipped += getAttr(suiteTag[0], 'skipped');
-        }
-
-        // Extrair cada caso de teste
-        const testcaseRegex = /<testcase\s+name="([^"]+)"[^>]*classname="([^"]+)"[^>]*time="([^"]+)"[^/]*(\/?>)([\s\S]*?)(?:<\/testcase>)?/g;
-        let match;
-        while ((match = testcaseRegex.exec(content)) !== null) {
-          const testName = match[1];
-          const className = match[2].split('.').pop();
-          const time = parseFloat(match[3]);
-          const rest = match[5] || '';
-          
-          let testStatus = '✅ PASSOU';
-          let message = '';
-          
-          if (rest.includes('<failure')) {
-            testStatus = '❌ FALHOU';
-            const msgMatch = rest.match(/message="([^"]*)"/);
-            message = msgMatch ? msgMatch[1] : '';
-          } else if (rest.includes('<error')) {
-            testStatus = '⚠️ ERRO';
-            const msgMatch = rest.match(/message="([^"]*)"/);
-            message = msgMatch ? msgMatch[1] : '';
-          }
-          
-          stats.testDetails.push({
-            name: testName,
-            class: className,
-            time: time.toFixed(3) + 's',
-            status: testStatus,
-            message
-          });
-        }
+  // Tenta ler saída Jest do último run via coverage summary
+  if (fileExists(coverageSummary)) {
+    try {
+      const summary = JSON.parse(fs.readFileSync(coverageSummary, 'utf8'));
+      const total = summary.total;
+      if (total && total.lines) {
+        stats.coverage = total.lines.pct + '%';
       }
-    });
-  }
-
-  // 2. Ler Cobertura do Jacoco (se existir)
-  if (fileExists(jacocoReport)) {
-    const content = fs.readFileSync(jacocoReport, 'utf8');
-    const totalMatch = content.match(/<tfoot><tr><td>Total<\/td><td class="bar">([^<]*)<\/td><td class="ctr2">(\d+%)<\/td>/);
-    if (totalMatch) {
-      stats.coverage = totalMatch[2];
-    } else {
-      const coverageMatch = content.match(/Missed Instructions.*?Total.*?class="ctr2">(\d+%)<\/td>/s);
-      if (coverageMatch) {
-        stats.coverage = coverageMatch[1];
-      }
+    } catch (e) {
+      // ignore
     }
   }
 
-  // 3. Ler violações do PMD
-  if (fileExists(pmdReport)) {
-    const content = fs.readFileSync(pmdReport, 'utf8');
-    const violations = content.split('<violation ').length - 1;
-    stats.pmdViolations = violations;
+  // Lê resultados do Jest JSON se existir
+  const jestResults = path.join(WORK_DIR, 'app/coverage/jest-results.json');
+  if (fileExists(jestResults)) {
+    try {
+      const results = JSON.parse(fs.readFileSync(jestResults, 'utf8'));
+      stats.testsRun = results.numTotalTests || 0;
+      stats.failures = results.numFailedTests || 0;
+      stats.errors = 0;
+      stats.skipped = results.numPendingTests || 0;
+
+      if (results.testResults) {
+        results.testResults.forEach(suite => {
+          (suite.assertionResults || []).forEach(test => {
+            let testStatus = '✅ PASSOU';
+            if (test.status === 'failed') testStatus = '❌ FALHOU';
+            else if (test.status === 'pending') testStatus = '⏭️ PULADO';
+            stats.testDetails.push({
+              name: test.title,
+              class: suite.name.split('/').pop().replace('.test.js', ''),
+              time: ((test.duration || 0) / 1000).toFixed(3) + 's',
+              status: testStatus,
+              message: (test.failureMessages || []).join(' ')
+            });
+          });
+        });
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   if (stats.failures > 0 || stats.errors > 0) {

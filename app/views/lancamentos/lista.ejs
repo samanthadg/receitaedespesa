@@ -1,0 +1,706 @@
+<% function sortDir(c) { return campo === c && direcao === 'asc' ? 'desc' : 'asc'; } %>
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lançamentos - <%= appEnv %></title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: rgba(30, 41, 59, 0.85);
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+        --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.2);
+        --primary: #10b981;
+        --primary-700: #059669;
+        --primary-50: rgba(16, 185, 129, 0.15);
+        --danger: #ef4444;
+      }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        font-size: 15px;
+        background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
+          var(--bg); background-attachment: fixed;
+        color: var(--text);
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 30px auto;
+        padding: 0 16px 44px;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .nav {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 0.1px;
+      }
+      .subtitle {
+        color: var(--muted);
+        font-size: 15px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 12px;
+        box-shadow: var(--shadow-sm);
+      }
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: end;
+        padding: 14px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.5);
+      }
+      .toolbar .filters {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr auto auto;
+        gap: 12px;
+        align-items: end;
+        width: 100%;
+      }
+      .toolbar .field {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+        gap: 12px;
+        padding: 14px;
+      }
+      .field label {
+        display: block;
+        font-size: 14px;
+        color: #52606d;
+        margin-bottom: 4px;
+      }
+      .field input,
+      .field select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #c7d2de;
+        border-radius: 6px;
+        padding: 11px 11px;
+        font-size: 15px;
+        background: rgba(15, 23, 42, 0.6);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .field input:focus,
+      .field select:focus {
+        outline: none;
+        border-color: #2f6fad;
+        box-shadow: 0 0 0 3px var(--primary-50);
+      }
+      .btn-primary {
+        border: 1px solid #14579b;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 6px;
+        padding: 10px 13px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-danger {
+        border: 1px solid #e0b3b3;
+        background: #fff6f6;
+        color: var(--danger);
+        border-radius: 6px;
+        padding: 10px 13px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-primary:hover {
+        background: var(--primary-700);
+      }
+      .btn-danger:hover {
+        background: #ffecec;
+      }
+      .btn-secondary {
+        border: 1px solid #d7dde4;
+        background: rgba(15, 23, 42, 0.6);
+        color: #1f2a37;
+        border-radius: 6px;
+        padding: 10px 13px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-secondary:hover {
+        background: #f7f9fb;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 12px 12px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        font-size: 15px;
+      }
+      th {
+        background: linear-gradient(180deg, #f7faff, #f3f7fd);
+        color: #2f4860;
+        font-weight: 600;
+        border-bottom: 1px solid #dfe7ef;
+      }
+      th a {
+        color: inherit;
+        text-decoration: none;
+      }
+      th a:hover {
+        text-decoration: underline;
+      }
+      tbody tr:hover {
+        background: #f7fbff;
+      }
+      tbody tr:nth-child(even) {
+        background: #fcfdff;
+      }
+      .tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #d7dde4;
+        background: rgba(15, 23, 42, 0.6);
+        font-size: 13px;
+        color: #334e68;
+      }
+      .tag.receita {
+        border-color: #b7e3c0;
+        background: #eef9f1;
+        color: #1e6b2b;
+      }
+      .tag.despesa {
+        border-color: #f0c2c2;
+        background: #fff2f2;
+        color: #8a1f1f;
+      }
+      .tag.pendente {
+        border-color: #f4dd9c;
+        background: #fff8e6;
+        color: #7a5a00;
+      }
+      .tag.efetivado {
+        border-color: #b7e3c0;
+        background: #eef9f1;
+        color: #1e6b2b;
+      }
+      .tag.cancelado {
+        border-color: #d7dde4;
+        background: #f3f4f6;
+        color: #334e68;
+      }
+      .valor {
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .muted {
+        color: #52606d;
+      }
+      .alert {
+        margin: 0 0 10px;
+        padding: 10px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      .alert.ok {
+        border: 1px solid #b7e3c0;
+        background: #eef9f1;
+        color: #1e6b2b;
+      }
+      .alert.err {
+        border: 1px solid #f0c2c2;
+        background: #fff2f2;
+        color: #8a1f1f;
+      }
+
+      .toast {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 9999;
+        min-width: 260px;
+        max-width: min(420px, calc(100vw - 32px));
+        border-radius: 10px;
+        padding: 12px 14px;
+        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.18);
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--text);
+        transform: translateY(-8px);
+        opacity: 0;
+        transition: transform 180ms ease, opacity 180ms ease;
+      }
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      .toast.ok {
+        border-color: #b7e3c0;
+        background: #eef9f1;
+        color: #1e6b2b;
+      }
+      .toast.err {
+        border-color: #f0c2c2;
+        background: #fff2f2;
+        color: #8a1f1f;
+      }
+      .toast.out {
+        transform: translateY(-8px);
+        opacity: 0;
+      }
+      footer {
+        margin-top: 14px;
+        color: #6b7785;
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+      form {
+        margin: 0;
+      }
+      .linkbtn {
+        border: 1px solid #d7dde4;
+        background: rgba(15, 23, 42, 0.6);
+        color: var(--text);
+        border-radius: 6px;
+        padding: 10px 13px;
+        font-size: 15px;
+        cursor: pointer;
+        text-decoration: none;
+        line-height: 1.2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+      }
+      a.linkbtn,
+      a.linkbtn:hover,
+      a.linkbtn:visited,
+      a.linkbtn:active {
+        text-decoration: none;
+      }
+      .linkbtn:hover {
+        background: #f7f9fb;
+      }
+      .linkbtn.edit {
+        border-color: rgba(27, 103, 177, 0.35);
+        background: rgba(27, 103, 177, 0.08);
+        color: var(--primary-700);
+      }
+      .linkbtn.edit:hover {
+        background: rgba(27, 103, 177, 0.12);
+      }
+      .linkbtn.primary {
+        border-color: #14579b;
+        background: var(--primary);
+        color: #fff;
+        font-weight: 600;
+      }
+      .linkbtn.primary:hover {
+        background: var(--primary-700);
+      }
+      @media (max-width: 700px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .toolbar .filters {
+          grid-template-columns: 1fr;
+        }
+        th:nth-child(1),
+        td:nth-child(1) {
+          display: none;
+        }
+      }
+
+      dialog {
+        border: none;
+        border-radius: 10px;
+        padding: 0;
+        width: min(980px, calc(100vw - 24px));
+        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.28);
+      }
+      dialog::backdrop {
+        background: rgba(15, 23, 42, 0.55);
+      }
+      .modal {
+        background: rgba(15, 23, 42, 0.6);
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      .modal-title {
+        font-weight: 700;
+        font-size: 18px;
+        color: #1f2a37;
+      }
+      .modal-close {
+        border: 1px solid #d7dde4;
+        background: rgba(15, 23, 42, 0.6);
+        color: #1f2a37;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      .modal-close:hover {
+        background: #f7f9fb;
+      }
+      .modal-body {
+        padding: 0;
+      }
+      .modal-actions {
+        display: flex;
+        justify-content: end;
+        gap: 10px;
+        padding: 12px 14px 14px;
+        border-top: 1px solid #edf1f5;
+      }
+
+      #addForm.form-grid {
+        grid-template-columns: 2.2fr 1fr 1fr 1fr 1fr;
+        gap: 14px;
+        padding: 16px 16px 10px;
+      }
+      #addForm .field input,
+      #addForm .field select {
+        padding: 12px 12px;
+        font-size: 16px;
+      }
+
+      .actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .actions form {
+        display: inline;
+      }
+      /* table-contrast-fix */
+      table { border-collapse: collapse; width: 100%; }
+      th { color: #94a3b8; }
+      td { color: #cbd5e1; }
+      tbody tr { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+      tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.04); }
+      tbody tr:nth-child(odd) { background: transparent; }
+      tbody tr:hover { background: rgba(255, 255, 255, 0.08); }
+      a { color: #60a5fa; }
+      a:hover { color: #93bbfc; }
+      .linkbtn { color: #10b981; }
+      .btn-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+      .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
+      select { background: rgba(15, 23, 42, 0.6); color: #f8fafc; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px; }
+      select option { background: #1e293b; color: #f8fafc; }
+      input[type="date"] { background: rgba(15, 23, 42, 0.6); color: #f8fafc; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; }
+      dialog, dialog .modal-content { background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1); }
+      dialog::backdrop { background: rgba(0,0,0,0.6); }
+      .badge-env {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 9999px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        line-height: 1;
+      }
+      .badge-env.homolog {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .badge-env.prod {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1 style="display: inline-flex; align-items: center; gap: 10px;">
+            <span>Listagem de lançamentos</span>
+            <% if (appEnv) { %>
+              <span class="badge-env <%= appEnv === 'Produção' ? 'prod' : 'homolog' %>"><%= appEnv %></span>
+            <% } %>
+          </h1>
+          <div class="subtitle">Despesas e receitas cadastradas no banco</div>
+        </div>
+        <div class="header-actions">
+          <div class="nav">
+            <a class="linkbtn" href="/usuarios">Usuários</a>
+          </div>
+          <button class="btn-primary" type="button" onclick="openAddModal()">Adicionar lançamento</button>
+          <div class="subtitle">
+            <span class="muted"><%= lancamentos.length %> registro(s)</span>
+          </div>
+          <form method="post" action="/logout">
+            <button class="linkbtn" type="submit">Sair</button>
+          </form>
+        </div>
+      </header>
+
+      <% if (msg || erro) { %>
+      <div
+        id="toast"
+        class="toast<%= msg ? ' ok show' : ' err show' %>"
+        role="status"
+        aria-live="polite">
+        <%= msg || erro %>
+      </div>
+      <% } %>
+
+      <dialog id="addModal" aria-labelledby="addModalTitle">
+        <div class="modal">
+          <div class="modal-header">
+            <div id="addModalTitle" class="modal-title">Novo lançamento</div>
+            <button class="modal-close" type="button" onclick="closeAddModal()">Fechar</button>
+          </div>
+          <div class="modal-body">
+            <form id="addForm" method="post" action="/lancamentos" class="form-grid" style="padding-bottom: 8px">
+              <div class="field">
+                <label for="descricaoNovo">Descrição</label>
+                <input id="descricaoNovo" name="descricao" required placeholder="Ex.: Aluguel, Salário, Mercado..." />
+              </div>
+              <div class="field">
+                <label for="dataLancamentoNovo">Data</label>
+                <input id="dataLancamentoNovo" name="dataLancamento" type="date" required />
+              </div>
+              <div class="field">
+                <label for="valorNovo">Valor</label>
+                <input id="valorNovo" name="valor" inputmode="decimal" autocomplete="off" placeholder="Ex.: 123,45" required />
+              </div>
+              <div class="field">
+                <label for="tipoLancamentoNovo">Tipo</label>
+                <select id="tipoLancamentoNovo" name="tipoLancamento">
+                  <option value="RECEITA">RECEITA</option>
+                  <option value="DESPESA">DESPESA</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="situacaoNovo">Situação</label>
+                <select id="situacaoNovo" name="situacao">
+                  <option value="EFETIVADO">EFETIVADO</option>
+                  <option value="PENDENTE">PENDENTE</option>
+                  <option value="CANCELADO">CANCELADO</option>
+                </select>
+              </div>
+              <div class="field" style="display:none">
+                <label>&nbsp;</label>
+                <button type="submit">Adicionar</button>
+              </div>
+            </form>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-secondary" type="button" onclick="closeAddModal()">Cancelar</button>
+            <button class="btn-primary" type="submit" form="addForm">Salvar</button>
+          </div>
+        </div>
+      </dialog>
+
+      <div class="card">
+        <div class="toolbar">
+          <form method="get" action="/lancamentos" class="filters">
+            <div class="field">
+              <label for="dataDe">Data (de)</label>
+              <input id="dataDe" name="dataDe" type="date" value="<%= dataDe %>" />
+            </div>
+            <div class="field">
+              <label for="dataAte">Data (até)</label>
+              <input id="dataAte" name="dataAte" type="date" value="<%= dataAte %>" />
+            </div>
+            <div class="field">
+              <label for="situacaoFiltro">Situação</label>
+              <select id="situacaoFiltro" name="situacao">
+                <option value="" <%= situacao === '' ? 'selected' : '' %>>Todas</option>
+                <% for (const s of situacoes) { %>
+                <option value="<%= s %>" <%= situacao === s ? 'selected' : '' %>><%= s %></option>
+                <% } %>
+              </select>
+            </div>
+
+            <input type="hidden" name="campo" value="<%= campo %>" />
+            <input type="hidden" name="direcao" value="<%= direcao %>" />
+
+            <div class="field">
+              <label>&nbsp;</label>
+              <button class="linkbtn" type="submit">Filtrar</button>
+            </div>
+            <div class="field">
+              <label>&nbsp;</label>
+              <a class="linkbtn primary" href="/lancamentos/export/pdf?campo=<%= encodeURIComponent(campo) %>&direcao=<%= encodeURIComponent(direcao) %>&dataDe=<%= encodeURIComponent(dataDe) %>&dataAte=<%= encodeURIComponent(dataAte) %>&situacao=<%= encodeURIComponent(situacao) %>">
+                Exportar PDF
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th><a href="/lancamentos?campo=id&direcao=<%= sortDir('id') %>&dataDe=<%= encodeURIComponent(dataDe) %>&dataAte=<%= encodeURIComponent(dataAte) %>&situacao=<%= encodeURIComponent(situacao) %>">ID</a></th>
+              <th><a href="/lancamentos?campo=descricao&direcao=<%= sortDir('descricao') %>&dataDe=<%= encodeURIComponent(dataDe) %>&dataAte=<%= encodeURIComponent(dataAte) %>&situacao=<%= encodeURIComponent(situacao) %>">Descrição</a></th>
+              <th><a href="/lancamentos?campo=dataLancamento&direcao=<%= sortDir('dataLancamento') %>&dataDe=<%= encodeURIComponent(dataDe) %>&dataAte=<%= encodeURIComponent(dataAte) %>&situacao=<%= encodeURIComponent(situacao) %>">Data</a></th>
+              <th><a href="/lancamentos?campo=valor&direcao=<%= sortDir('valor') %>&dataDe=<%= encodeURIComponent(dataDe) %>&dataAte=<%= encodeURIComponent(dataAte) %>&situacao=<%= encodeURIComponent(situacao) %>">Valor</a></th>
+              <th><a href="/lancamentos?campo=tipoLancamento&direcao=<%= sortDir('tipoLancamento') %>&dataDe=<%= encodeURIComponent(dataDe) %>&dataAte=<%= encodeURIComponent(dataAte) %>&situacao=<%= encodeURIComponent(situacao) %>">Tipo</a></th>
+              <th><a href="/lancamentos?campo=situacao&direcao=<%= sortDir('situacao') %>&dataDe=<%= encodeURIComponent(dataDe) %>&dataAte=<%= encodeURIComponent(dataAte) %>&situacao=<%= encodeURIComponent(situacao) %>">Situação</a></th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for (const l of lancamentos) { %>
+            <tr>
+              <td><%= l.id %></td>
+              <td><%= l.descricao %></td>
+              <td><%= formatDatePt(l.dataLancamento) %></td>
+              <td class="valor"><%= formatDecimal(l.valor) %></td>
+              <td>
+                <span class="tag <%= l.tipoLancamento.toLowerCase() %>"><%= l.tipoLancamento %></span>
+              </td>
+              <td>
+                <span class="tag <%= l.situacao.toLowerCase() %>"><%= l.situacao %></span>
+              </td>
+              <td>
+                <div class="actions">
+                  <a class="linkbtn edit" href="/lancamentos/<%= l.id %>/editar">Editar</a>
+                  <form action="/lancamentos/<%= l.id %>/excluir" method="post">
+                    <button class="btn-danger" type="submit">Excluir</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <script>
+      function normalizeDecimalPtBrToJava(value) {
+        if (!value) return value;
+        // Allow "1.234,56" or "1234,56" or "1234.56" -> "1234.56"
+        let v = String(value).trim();
+        v = v.replace(/\s/g, "");
+        const hasComma = v.includes(",");
+        if (hasComma) {
+          v = v.replace(/\./g, "");
+          v = v.replace(",", ".");
+        }
+        // keep only digits and dot (single)
+        v = v.replace(/[^0-9.]/g, "");
+        const firstDot = v.indexOf(".");
+        if (firstDot !== -1) {
+          v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, "");
+        }
+        return v;
+      }
+
+      function openAddModal() {
+        const dialog = document.getElementById("addModal");
+        if (!dialog) return;
+        const form = document.getElementById("addForm");
+        if (form) form.reset();
+        const dateInput = document.getElementById("dataLancamentoNovo");
+        if (dateInput && !dateInput.value) {
+          const now = new Date();
+          const yyyy = now.getFullYear();
+          const mm = String(now.getMonth() + 1).padStart(2, "0");
+          const dd = String(now.getDate()).padStart(2, "0");
+          dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+        if (typeof dialog.showModal === "function") dialog.showModal();
+        else dialog.setAttribute("open", "open");
+        setTimeout(() => {
+          const desc = document.getElementById("descricaoNovo");
+          if (desc) desc.focus();
+        }, 0);
+      }
+
+      function closeAddModal() {
+        const dialog = document.getElementById("addModal");
+        if (!dialog) return;
+        if (typeof dialog.close === "function") dialog.close();
+        else dialog.removeAttribute("open");
+      }
+
+      (function wireUpModalDismiss() {
+        const dialog = document.getElementById("addModal");
+        if (!dialog) return;
+        const form = document.getElementById("addForm");
+        if (form) {
+          form.addEventListener("submit", () => {
+            const valor = document.getElementById("valorNovo");
+            if (valor) valor.value = normalizeDecimalPtBrToJava(valor.value);
+            const saveBtn = document.querySelector('button[form="addForm"]');
+            if (saveBtn) {
+              saveBtn.disabled = true;
+              saveBtn.textContent = "Salvando...";
+            }
+          });
+        }
+        dialog.addEventListener("click", (e) => {
+          if (e.target === dialog) closeAddModal();
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && dialog.hasAttribute("open")) closeAddModal();
+        });
+      })();
+
+      (function wireUpToastAutoHide() {
+        const toast = document.getElementById("toast");
+        if (!toast) return;
+        setTimeout(() => {
+          toast.classList.add("out");
+        }, 5000);
+        setTimeout(() => {
+          if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+        }, 5300);
+      })();
+    </script>
+  </body>
+</html>

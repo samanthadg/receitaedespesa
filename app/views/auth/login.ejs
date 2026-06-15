@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lançamentos - <%= appEnv %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-dark: #0f172a;
+        --bg-card: rgba(30, 41, 59, 0.85);
+        --primary: #10b981;
+        --primary-hover: #059669;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --border-color: rgba(255, 255, 255, 0.08);
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Outfit', 'Segoe UI', Tahoma, Arial, sans-serif;
+        background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark));
+        background-attachment: fixed;
+        color: var(--text-main);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container { max-width: 420px; width: 100%; padding: 0 1.5rem; }
+      .panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2.5rem;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+      .app-name {
+        margin: 0 0 6px 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        background: linear-gradient(to right, #34d399, #60a5fa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+      }
+      .env-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+      .env-homologacao {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .env-producao {
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+      .center { text-align: center; margin-bottom: 1.5rem; }
+      h1 { margin: 0.5rem 0 4px 0; font-size: 1.1rem; font-weight: 600; color: var(--text-muted); }
+      label { display: block; font-size: 0.85rem; margin: 1rem 0 0.4rem; color: var(--text-muted); font-weight: 500; }
+      input {
+        width: 100%; padding: 0.75rem 1rem;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--border-color);
+        border-radius: 8px; color: var(--text-main); font-size: 0.95rem; font-family: inherit;
+      }
+      input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15); }
+      .row { margin-top: 1.25rem; }
+      button {
+        width: 100%; padding: 0.85rem; background: var(--primary); color: #fff;
+        border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      }
+      button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+      .error {
+        margin: 0 0 10px 0; padding: 0.75rem 1rem;
+        background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #fca5a5; border-radius: 8px; font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="panel">
+        <div class="center">
+          <div class="app-name">Lançamentos</div>
+          <% if (appEnv === 'Homologação') { %>
+            <span class="env-badge env-homologacao"><%= appEnv %></span>
+          <% } else if (appEnv === 'Produção') { %>
+            <span class="env-badge env-producao"><%= appEnv %></span>
+          <% } %>
+        </div>
+        <h1>Autenticação</h1>
+        <% if (error) { %><div class="error"><%= error %></div><% } %>
+        <form method="post" action="/login">
+          <label for="login">Login</label>
+          <input id="login" name="login" autocomplete="username" placeholder="Digite seu login" required />
+          <label for="senha">Senha</label>
+          <input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="Digite sua senha" required />
+          <div class="row"><button type="submit">Entrar</button></div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

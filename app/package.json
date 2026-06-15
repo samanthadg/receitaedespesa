@@ -1,0 +1,41 @@
+{
+  "name": "lancamento",
+  "version": "0.0.1-SNAPSHOT",
+  "description": "Registro de despesas e receitas",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "migrate": "node src/db/migrate.js",
+    "test": "jest --coverage --forceExit --json --outputFile=coverage/jest-results.json",
+    "test:enum": "jest --testNamePattern=EnumDominio",
+    "test:validation": "jest --testNamePattern=ValidationTest",
+    "test:business": "jest --testNamePattern=BusinessRulesTest",
+    "test:mock": "jest --testNamePattern='LancamentoEmailServiceTest|LancamentoRepositoryStubTest'",
+    "test:pdf": "jest --testNamePattern=LancamentoPdfExporterTest"
+  },
+  "dependencies": {
+    "connect-flash": "^0.1.1",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "nodemailer": "^6.9.16",
+    "pdfkit": "^0.15.2",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["json-summary", "text"],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/db/migrate.js"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editar lançamento</title>
+    <style>
+      :root { --bg: #0f172a; --card: rgba(30, 41, 59, 0.85); --text: #f8fafc; --muted: #94a3b8; --border: rgba(255, 255, 255, 0.08); --primary: #10b981; --primary-700: #059669; --primary-50: rgba(16, 185, 129, 0.15); }
+      body { margin: 0; font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: radial-gradient(circle at top right, #1e1b4b, var(--bg)); background-attachment: fixed; color: var(--text); }
+      .wrap { max-width: 900px; margin: 30px auto; padding: 0 16px 44px; }
+      header { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 14px; }
+      h1 { margin: 0; font-size: 20px; font-weight: 700; }
+      .subtitle { color: var(--muted); font-size: 13px; }
+      .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: 0 10px 26px rgba(0,0,0,0.3); }
+      .grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 12px; padding: 14px; }
+      .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+      .field input, .field select { width: 100%; box-sizing: border-box; border: 1px solid var(--border); border-radius: 6px; padding: 8px 9px; font-size: 13px; background: rgba(15,23,42,0.6); color: var(--text); }
+      .row { display: flex; gap: 10px; padding: 0 14px 14px; align-items: center; }
+      .btn-primary { border: 1px solid var(--border); background: var(--primary); color: #fff; border-radius: 6px; padding: 8px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
+      .linkbtn { border: 1px solid var(--border); background: rgba(15,23,42,0.6); color: var(--text); border-radius: 6px; padding: 8px 11px; font-size: 13px; text-decoration: none; display: inline-block; }
+      .badge-env { display: inline-flex; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+      .badge-env.homolog { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+      .badge-env.prod { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+      @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1 style="display:inline-flex;align-items:center;gap:10px;">
+            <span>Editar lançamento</span>
+            <% if (appEnv) { %>
+              <span class="badge-env <%= appEnv === 'Produção' ? 'prod' : 'homolog' %>"><%= appEnv %></span>
+            <% } %>
+          </h1>
+          <div class="subtitle">ID <%= lancamento.id %></div>
+        </div>
+        <a class="linkbtn" href="/lancamentos">Voltar</a>
+      </header>
+      <div class="card">
+        <form method="post" action="/lancamentos/<%= lancamento.id %>">
+          <div class="grid">
+            <div class="field"><label for="descricao">Descrição</label><input id="descricao" name="descricao" required value="<%= lancamento.descricao %>" /></div>
+            <div class="field"><label for="dataLancamento">Data</label><input id="dataLancamento" name="dataLancamento" type="date" required value="<%= lancamento.dataLancamento %>" /></div>
+            <div class="field"><label for="valor">Valor</label><input id="valor" name="valor" type="number" min="0.01" step="0.01" required value="<%= lancamento.valor %>" /></div>
+            <div class="field"><label for="tipoLancamento">Tipo</label>
+              <select id="tipoLancamento" name="tipoLancamento">
+                <option value="RECEITA" <%= lancamento.tipoLancamento === 'RECEITA' ? 'selected' : '' %>>RECEITA</option>
+                <option value="DESPESA" <%= lancamento.tipoLancamento === 'DESPESA' ? 'selected' : '' %>>DESPESA</option>
+              </select>
+            </div>
+            <div class="field"><label for="situacao">Situação</label>
+              <select id="situacao" name="situacao">
+                <option value="EFETIVADO" <%= lancamento.situacao === 'EFETIVADO' ? 'selected' : '' %>>EFETIVADO</option>
+                <option value="PENDENTE" <%= lancamento.situacao === 'PENDENTE' ? 'selected' : '' %>>PENDENTE</option>
+                <option value="CANCELADO" <%= lancamento.situacao === 'CANCELADO' ? 'selected' : '' %>>CANCELADO</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn-primary" type="submit">Salvar</button>
+            <a class="linkbtn" href="/lancamentos">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

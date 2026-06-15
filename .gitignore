@@ -1,5 +1,7 @@
 app/target/
 **/target/
+node_modules/
+app/coverage/
 .idea/
 .vscode/
 *.iml

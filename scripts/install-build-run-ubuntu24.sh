@@ -6,13 +6,10 @@ set -euo pipefail
 #   2) Rode: sudo bash scripts/install-build-run-ubuntu24.sh
 #
 # Resultado:
-#   - Instala Java 21 + Maven + PostgreSQL 18
+#   - Instala Node.js 20 + PostgreSQL 18
 #   - Cria DB/usuário
-#   - Compila o jar
+#   - Instala dependências npm
 #   - Sobe como serviço systemd na porta 8080
-#
-# Antes de rodar em produção:
-#   - Edite /etc/lancamento.env e preencha SMTP_USER/SMTP_PASS (App Password) e APP_MAIL_ENABLED=true
 
 APP_DIR="/opt/lancamento"
 APP_SUBDIR="${APP_DIR}/app"
@@ -25,17 +22,17 @@ if [[ "${EUID}" -ne 0 ]]; then
   exit 1
 fi
 
-if [[ ! -f "${APP_SUBDIR}/pom.xml" ]]; then
-  echo "Não encontrei ${APP_SUBDIR}/pom.xml"
+if [[ ! -f "${APP_SUBDIR}/package.json" ]]; then
+  echo "Não encontrei ${APP_SUBDIR}/package.json"
   echo "Copie o projeto para ${APP_DIR} antes de rodar este script."
   exit 1
 fi
 
-echo "[1/4] Provisionando VM (Java/Maven/Postgres18 + DB + service)..."
+echo "[1/4] Provisionando VM (Node/Postgres18 + DB + service)..."
 bash "${APP_DIR}/scripts/provision-ubuntu24.sh"
 
-echo "[2/4] Compilando a aplicação..."
-bash -lc "source /etc/profile.d/lancamento-java.sh 2>/dev/null || true; cd '${APP_SUBDIR}' && mvn -DskipTests package"
+echo "[2/4] Instalando dependências npm..."
+cd "${APP_SUBDIR}" && npm ci 2>/dev/null || npm install
 
 echo "[3/4] Subindo serviço systemd..."
 systemctl daemon-reload

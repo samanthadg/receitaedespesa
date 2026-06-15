@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS usuario (
+  id BIGSERIAL PRIMARY KEY,
+  nome VARCHAR(120) NOT NULL,
+  login VARCHAR(60) NOT NULL UNIQUE,
+  senha VARCHAR(255) NOT NULL,
+  situacao VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS lancamento (
+  id BIGSERIAL PRIMARY KEY,
+  descricao VARCHAR(200) NOT NULL,
+  data_lancamento DATE NOT NULL,
+  valor NUMERIC(14,2) NOT NULL,
+  tipo_lancamento VARCHAR(20) NOT NULL,
+  situacao VARCHAR(20) NOT NULL
+);

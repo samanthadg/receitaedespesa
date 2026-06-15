@@ -13,31 +13,13 @@ fi
 
 echo "[1/8] Atualizando sistema e instalando dependências base..."
 apt-get update -y
-apt-get install -y ca-certificates curl gnupg lsb-release unzip git ufw maven
+apt-get install -y ca-certificates curl gnupg lsb-release unzip git ufw
 
-echo "[2/8] Instalando Java (Temurin 21)..."
-mkdir -p /etc/apt/keyrings
-curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public \
-  | gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg
-echo "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb $(lsb_release -cs) main" \
-  > /etc/apt/sources.list.d/adoptium.list
-apt-get update -y
-apt-get install -y temurin-21-jdk
-
-echo "[2.1/8] Definindo Java 21 como padrão..."
-if command -v update-alternatives >/dev/null 2>&1; then
-  JAVA_PATH="$(update-alternatives --list java 2>/dev/null | grep -E '/temurin-21|/java-21' | head -n 1 || true)"
-  JAVAC_PATH="$(update-alternatives --list javac 2>/dev/null | grep -E '/temurin-21|/java-21' | head -n 1 || true)"
-  if [[ -n "${JAVA_PATH}" ]]; then
-    update-alternatives --set java "${JAVA_PATH}" || true
-  fi
-  if [[ -n "${JAVAC_PATH}" ]]; then
-    update-alternatives --set javac "${JAVAC_PATH}" || true
-  fi
-fi
-
-java -version || true
-javac -version || true
+echo "[2/8] Instalando Node.js 20..."
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt-get install -y nodejs
+node -v || true
+npm -v || true
 
 echo "[3/8] Instalando PostgreSQL 18 (PGDG)..."
 curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
@@ -97,16 +79,14 @@ APP_MAIL_TO=
 APP_PUBLIC_BASE_URL=
 EOF
 
-# Para o Maven e qualquer execução non-interactive pegar o JDK correto
-JDK_DIR="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"
-cat >/etc/profile.d/lancamento-java.sh <<EOF
-export JAVA_HOME=${JDK_DIR}
-export PATH=\$JAVA_HOME/bin:\$PATH
+# Para execuções non-interactive
+cat >/etc/profile.d/lancamento-node.sh <<'EOF'
+export PATH=/usr/bin:$PATH
 EOF
 
 cat >/etc/systemd/system/lancamento.service <<'EOF'
 [Unit]
-Description=Aplicação Lancamento (Spring Boot)
+Description=Aplicação Lancamento (Node.js)
 After=network.target postgresql.service
 
 [Service]
@@ -114,9 +94,7 @@ Type=simple
 User=root
 WorkingDirectory=/opt/lancamento/app
 EnvironmentFile=/etc/lancamento.env
-Environment="JAVA_HOME=/usr/lib/jvm/temurin-21-jdk-amd64"
-Environment="PATH=/usr/lib/jvm/temurin-21-jdk-amd64/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=/usr/bin/java -jar /opt/lancamento/app/target/lancamento-0.0.1-SNAPSHOT.jar
+ExecStart=/usr/bin/node /opt/lancamento/app/server.js
 Restart=always
 RestartSec=5
 
