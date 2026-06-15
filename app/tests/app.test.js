@@ -3,6 +3,12 @@ const { validateLancamento, validateUsuario } = require('../src/domain/validatio
 const { createEmailService } = require('../src/services/lancamentoEmailService');
 const { exportPdf } = require('../src/web/lancamentoPdfExporter');
 
+jest.mock('../src/db/pool', () => ({
+  pool: {
+    query: jest.fn(),
+  },
+}));
+
 describe('EnumDominioTest', () => {
   test('tipoLancamento_receita_existeNoEnum', () => {
     expect(TipoLancamento.RECEITA).toBe('RECEITA');
@@ -178,5 +184,138 @@ describe('LancamentoRepositoryStubTest', () => {
     });
     expect(row.tipoLancamento).toBe('RECEITA');
     expect(row.dataLancamento).toBe('2026-01-01');
+  });
+});
+
+describe('LancamentoRepositoryJpaTest', () => {
+  const lancamentoRepository = require('../src/repos/lancamentoRepository');
+  const { pool } = require('../src/db/pool');
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('repositorio_salvarEBuscar_lancamentoEncontrado', async () => {
+    const mockLancamento = {
+      id: 1,
+      descricao: 'Teste Repo',
+      data_lancamento: '2026-01-01',
+      valor: '100.00',
+      tipo_lancamento: 'RECEITA',
+      situacao: 'EFETIVADO',
+    };
+
+    pool.query
+      .mockResolvedValueOnce({ rows: [mockLancamento] }) // for save
+      .mockResolvedValueOnce({ rows: [mockLancamento] }); // for findById
+
+    const saved = await lancamentoRepository.save({
+      descricao: 'Teste Repo',
+      dataLancamento: '2026-01-01',
+      valor: '100.00',
+      tipoLancamento: 'RECEITA',
+      situacao: 'EFETIVADO',
+    });
+
+    const found = await lancamentoRepository.findById(saved.id);
+
+    expect(saved.id).toBe(1);
+    expect(found.descricao).toBe('Teste Repo');
+    expect(pool.query).toHaveBeenCalledTimes(2);
+  });
+
+  test('repositorio_listarPorSituacao_retornaApenasEfetivados', async () => {
+    const mockRows = [
+      {
+        id: 1,
+        descricao: 'A',
+        data_lancamento: '2026-01-01',
+        valor: '10.00',
+        tipo_lancamento: 'RECEITA',
+        situacao: 'EFETIVADO',
+      },
+    ];
+    pool.query.mockResolvedValueOnce({ rows: mockRows });
+
+    const results = await lancamentoRepository.findBySituacao('EFETIVADO');
+
+    expect(results).toHaveLength(1);
+    expect(results[0].situacao).toBe('EFETIVADO');
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE situacao = $1'),
+      ['EFETIVADO']
+    );
+  });
+
+  test('repositorio_contarLancamentos_retornaTotalCorreto', async () => {
+    pool.query.mockResolvedValueOnce({ rows: [{ count: '4' }] });
+    
+    const countVal = await lancamentoRepository.count();
+    
+    expect(countVal).toBe(4);
+    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('COUNT(*)'));
+  });
+});
+
+describe('AuthControllerTest', () => {
+  const express = require('express');
+  const request = require('supertest');
+  const authRouter = require('../src/routes/auth');
+  const usuarioRepository = require('../src/repos/usuarioRepository');
+
+  let testApp;
+
+  beforeAll(() => {
+    testApp = express();
+    testApp.use(express.urlencoded({ extended: true }));
+    testApp.use(express.json());
+    testApp.use((req, res, next) => {
+      req.session = {
+        destroy: (cb) => {
+          if (cb) cb();
+        }
+      };
+      next();
+    });
+    testApp.use((req, res, next) => {
+      res.locals.appEnv = 'Teste';
+      res.locals.msg = null;
+      res.locals.erro = null;
+      next();
+    });
+    const path = require('path');
+    testApp.set('view engine', 'ejs');
+    testApp.set('views', path.join(__dirname, '../views'));
+    testApp.use('/', authRouter);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('login_credenciaisValidas_redirecionaParaHome', async () => {
+    jest.spyOn(usuarioRepository, 'findByLoginAndSenha').mockResolvedValueOnce({
+      login: 'admin',
+      situacao: 'ATIVO',
+    });
+
+    const response = await request(testApp)
+      .post('/login')
+      .send('login=admin&senha=123');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/lancamentos');
+    expect(usuarioRepository.findByLoginAndSenha).toHaveBeenCalledWith('admin', '123');
+  });
+
+  test('login_credenciaisInvalidas_retornaMensagemDeErro', async () => {
+    jest.spyOn(usuarioRepository, 'findByLoginAndSenha').mockResolvedValueOnce(null);
+
+    const response = await request(testApp)
+      .post('/login')
+      .send('login=admin&senha=wrong');
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain('Login ou senha inválidos.');
   });
 });

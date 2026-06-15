@@ -103,4 +103,9 @@ async function findBySituacao(situacao) {
   return rows.map(mapRow);
 }
 
-module.exports = { findAll, findById, save, deleteById, findBySituacao, mapRow };
+async function count() {
+  const { rows } = await pool.query('SELECT COUNT(*) as count FROM lancamento');
+  return parseInt(rows[0].count, 10);
+}
+
+module.exports = { findAll, findById, save, deleteById, findBySituacao, count, mapRow };

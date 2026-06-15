@@ -1,6 +1,6 @@
 # Guia de Apresentação e Testes (CI/CD DevOps)
 
-Este guia detalha o passo a passo de como demonstrar o funcionamento dos ambientes de Integração, Homologação e Produção em Docker na VM da Univates.
+Este guia detalha o passo a passo de como demonstrar o funcionamento dos ambientes de Integração, Homologação e Produção em Docker na VM da Univates para o projeto migrado para **Node.js/JavaScript**.
 
 ---
 
@@ -33,7 +33,7 @@ sudo docker compose up -d
 
 1. Acesse o ambiente de **Homologação** em `http://177.44.248.120:8081/login`
    - Credenciais: Usuário `admin` / Senha `123456`
-2. Cadastre um novo lançamento (ex: "Jantar de Negócios", Valor `150.00`, RECEITA/DESPESA).
+2. Cadastre um novo lançamento (ex: "Jantar de Negócios", Valor `150.00`, DESPESA).
 3. Acesse o ambiente de **Produção** em `http://177.44.248.120:8082/login`
    - Use as mesmas credenciais.
 4. Demonstre que o lançamento cadastrado em Homologação **não aparece** na lista de Produção, comprovando que os bancos de dados são totalmente independentes e isolados.
@@ -43,25 +43,25 @@ sudo docker compose up -d
 ## 3. Fluxo de Atualização (Alteração de Palavra e Nova Tabela)
 
 ### Passo 1: Alterar uma palavra na aplicação
-No terminal da VM (ou via editor), edite o arquivo HTML da listagem de lançamentos:
+No terminal da VM (ou via editor), edite a view EJS de listagem de lançamentos:
 ```bash
-sudo nano /opt/lancamento/app/src/main/resources/templates/lancamentos/lista.html
+sudo nano /opt/lancamento/app/views/lancamentos/lista.ejs
 ```
 Localize a tag `<h1>Lançamentos</h1>` (por volta da linha 48) e altere para:
 ```html
 <h1>Controle Financeiro (Homolog)</h1>
 ```
 
-### Passo 2: Criar uma nova tabela no banco de dados (Flyway Migration)
-Crie um novo arquivo de migração do Flyway para criar a tabela de logs de auditoria:
+### Passo 2: Criar uma nova tabela no banco de dados (Migration)
+Crie um novo arquivo de migração JavaScript no diretório de migrações:
 ```bash
-sudo nano /opt/lancamento/app/src/main/resources/db/migration/V3__criar_tabela_auditoria.sql
+sudo nano /opt/lancamento/app/db/migrations/V4__criar_tabela_auditoria.sql
 ```
 Adicione o seguinte conteúdo SQL:
 ```sql
 CREATE TABLE IF NOT EXISTS auditoria (
   id BIGSERIAL PRIMARY KEY,
-  data_hora TIMESTAMP NOT NULL,
+  data_hora TIMESTAMP NOT NULL DEFAULT NOW(),
   acao VARCHAR(100) NOT NULL
 );
 ```
@@ -73,9 +73,9 @@ CREATE TABLE IF NOT EXISTS auditoria (
    - Descrição: `Alterado titulo principal e criada tabela de auditoria`
    - Clique em **Registrar Mudança**.
 3. No card **Pipeline**, clique em **Rodar Integração (CI)**.
-   - Isso executará a compilação, os 20 testes unitários e a análise de qualidade (PMD/JaCoCo). Acompanhe os logs em tempo real no console do painel.
+   - Isso executará a instalação limpa de dependências, os 20 testes unitários via **Jest** e calculará a cobertura de código. Acompanhe os logs em tempo real no console do painel.
 4. Assim que o CI terminar com sucesso, clique em **Deploy Homologação**.
-   - Isso recriará o container de homologação com a nova imagem.
+   - Isso reconstruirá o container de homologação com o novo código do EJS e aplicará a migração V4 no banco de Homologação.
 5. Acesse `http://177.44.248.120:8081` e mostre o novo título: **Controle Financeiro (Homolog)**.
 6. Mostre que em Produção (`http://177.44.248.120:8082`) a palavra **não mudou** e a tabela de auditoria ainda não existe no banco de Produção.
 
@@ -83,41 +83,33 @@ CREATE TABLE IF NOT EXISTS auditoria (
 1. No Painel Admin (`http://177.44.248.120:8080`), clique em **Deploy Produção**.
 2. Confirme a promoção na janela de confirmação.
 3. Acesse `http://177.44.248.120:8082` e verifique que o título agora foi atualizado em Produção.
-4. Para provar que a nova tabela de auditoria foi criada automaticamente pelo Flyway no banco de Produção, execute na VM:
+4. Para provar que a nova tabela de auditoria foi criada automaticamente pela migração no banco de Produção, execute na VM:
    ```bash
    sudo docker exec -it prod-db psql -U lancamento_user -d lancamento_db -c "\dt"
    ```
-   *Resultado esperado:* A tabela `auditoria` deve aparecer listada junto com `usuario`, `lancamento` e `schema_version`.
+   *Resultado esperado:* A tabela `auditoria` deve aparecer listada junto com `usuario`, `lancamento` e `schema_migrations`.
 
 ---
 
 ## 4. Quebrar os Testes e a Qualidade de Código
 
-Para demonstrar que o pipeline de integração funciona e bloqueia deploys inválidos, podemos introduzir falhas:
+Para demonstrar que o pipeline de integração funciona e bloqueia deploys inválidos, podemos introduzir falhas nos testes:
 
 ### Quebrar Teste Unitário
-1. Edite a classe de entidade `Lancamento.java`:
+1. Edite a lógica de validação de valor de lançamentos:
    ```bash
-   sudo nano /opt/lancamento/app/src/main/java/br/com/lancamento/domain/Lancamento.java
+   sudo nano /opt/lancamento/app/src/domain/validation.js
    ```
-2. Mude a anotação do valor mínimo do lançamento de `@Min(0)` para `@Min(100)` ou altere a lógica de algum método de validação.
+2. Mude a linha:
+   ```javascript
+   if (Number.isNaN(valor) || valor <= 0) errors.push('valor');
+   ```
+   para exigir valor mínimo de `100`:
+   ```javascript
+   if (Number.isNaN(valor) || valor <= 100) errors.push('valor');
+   ```
 3. No Painel Admin, clique em **Rodar Integração (CI)**.
-4. O Maven falhará na execução dos testes e o painel exibirá:
-   - **Passaram:** menor que 20.
-   - Mensagem de falha destacada em vermelho no terminal.
-
-### Quebrar Qualidade (PMD)
-1. Crie uma classe java inútil ou com problemas de estilo no código:
-   ```bash
-   sudo nano /opt/lancamento/app/src/main/java/br/com/lancamento/domain/ClasseInutil.java
-   ```
-2. Adicione imports não utilizados e deixe a classe vazia:
-   ```java
-   package br.com.lancamento.domain;
-   import java.util.ArrayList;
-   import java.util.List;
-   public class ClasseInutil {
-       // classe vazia viola regras do PMD
-   }
-   ```
-3. Rode a Integração pelo painel e mostre que a quantidade de **Avisos PMD** subiu.
+4. O Jest falhará na execução dos testes e o painel exibirá:
+   - **Passaram:** menor que 20 (ex: 18 ou 19 passados).
+   - Mensagem de falha destacada em vermelho no terminal do painel.
+   - O status do pipeline mudará para **Erro** impedindo deploys automáticos seguros.
