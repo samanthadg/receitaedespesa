@@ -24,7 +24,7 @@
         font-family: "Segoe UI", Tahoma, Arial, sans-serif;
         font-size: 15px;
         background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
-          var(--bg); background-attachment: fixed;
+        background-attachment: fixed;
         color: var(--text);
       }
       .wrap {
@@ -98,40 +98,31 @@
       .field label {
         display: block;
         font-size: 14px;
-        color: #52606d;
+        color: var(--muted);
         margin-bottom: 4px;
       }
       .field input,
       .field select {
         width: 100%;
         box-sizing: border-box;
-        border: 1px solid #c7d2de;
+        border: 1px solid var(--border);
         border-radius: 6px;
         padding: 11px 11px;
         font-size: 15px;
         background: rgba(15, 23, 42, 0.6);
+        color: var(--text);
         transition: border-color 0.15s ease, box-shadow 0.15s ease;
       }
       .field input:focus,
       .field select:focus {
         outline: none;
-        border-color: #2f6fad;
+        border-color: var(--primary);
         box-shadow: 0 0 0 3px var(--primary-50);
       }
       .btn-primary {
-        border: 1px solid #14579b;
+        border: 1px solid var(--border);
         background: var(--primary);
         color: #fff;
-        border-radius: 6px;
-        padding: 10px 13px;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .btn-danger {
-        border: 1px solid #e0b3b3;
-        background: #fff6f6;
-        color: var(--danger);
         border-radius: 6px;
         padding: 10px 13px;
         font-size: 15px;
@@ -141,13 +132,23 @@
       .btn-primary:hover {
         background: var(--primary-700);
       }
+      .btn-danger {
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+        border-radius: 6px;
+        padding: 10px 13px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
       .btn-danger:hover {
-        background: #ffecec;
+        background: rgba(239, 68, 68, 0.25);
       }
       .btn-secondary {
-        border: 1px solid #d7dde4;
+        border: 1px solid var(--border);
         background: rgba(15, 23, 42, 0.6);
-        color: #1f2a37;
+        color: var(--text);
         border-radius: 6px;
         padding: 10px 13px;
         font-size: 15px;
@@ -155,7 +156,7 @@
         cursor: pointer;
       }
       .btn-secondary:hover {
-        background: #f7f9fb;
+        background: rgba(255, 255, 255, 0.08);
       }
       table {
         width: 100%;
@@ -169,10 +170,10 @@
         font-size: 15px;
       }
       th {
-        background: linear-gradient(180deg, #f7faff, #f3f7fd);
-        color: #2f4860;
+        background: rgba(15, 23, 42, 0.4);
+        color: var(--muted);
         font-weight: 600;
-        border-bottom: 1px solid #dfe7ef;
+        border-bottom: 1px solid var(--border);
       }
       th a {
         color: inherit;
@@ -181,68 +182,74 @@
       th a:hover {
         text-decoration: underline;
       }
-      tbody tr:hover {
-        background: #f7fbff;
+      tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       }
       tbody tr:nth-child(even) {
-        background: #fcfdff;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      tbody tr:nth-child(odd) {
+        background: transparent;
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.08);
       }
       .tag {
         display: inline-block;
         padding: 2px 8px;
         border-radius: 999px;
-        border: 1px solid #d7dde4;
+        border: 1px solid var(--border);
         background: rgba(15, 23, 42, 0.6);
         font-size: 13px;
-        color: #334e68;
+        color: var(--muted);
       }
       .tag.receita {
-        border-color: #b7e3c0;
-        background: #eef9f1;
-        color: #1e6b2b;
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.1);
+        color: #34d399;
       }
       .tag.despesa {
-        border-color: #f0c2c2;
-        background: #fff2f2;
-        color: #8a1f1f;
+        border-color: rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
       }
       .tag.pendente {
-        border-color: #f4dd9c;
-        background: #fff8e6;
-        color: #7a5a00;
+        border-color: rgba(245, 158, 11, 0.3);
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
       }
       .tag.efetivado {
-        border-color: #b7e3c0;
-        background: #eef9f1;
-        color: #1e6b2b;
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.1);
+        color: #34d399;
       }
       .tag.cancelado {
-        border-color: #d7dde4;
-        background: #f3f4f6;
-        color: #334e68;
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--muted);
       }
       .valor {
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
       .muted {
-        color: #52606d;
+        color: var(--muted);
       }
       .alert {
         margin: 0 0 10px;
         padding: 10px 12px;
         border-radius: 6px;
-        font-size: 13px;
+        font-size: 15px;
       }
       .alert.ok {
-        border: 1px solid #b7e3c0;
-        background: #eef9f1;
-        color: #1e6b2b;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
       }
       .alert.err {
-        border: 1px solid #f0c2c2;
-        background: #fff2f2;
-        color: #8a1f1f;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
       }
 
       .toast {
@@ -254,9 +261,9 @@
         max-width: min(420px, calc(100vw - 32px));
         border-radius: 10px;
         padding: 12px 14px;
-        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.18);
+        box-shadow: var(--shadow);
         border: 1px solid var(--border);
-        background: rgba(15, 23, 42, 0.6);
+        background: var(--card);
         color: var(--text);
         transform: translateY(-8px);
         opacity: 0;
@@ -267,14 +274,14 @@
         opacity: 1;
       }
       .toast.ok {
-        border-color: #b7e3c0;
-        background: #eef9f1;
-        color: #1e6b2b;
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
       }
       .toast.err {
-        border-color: #f0c2c2;
-        background: #fff2f2;
-        color: #8a1f1f;
+        border-color: rgba(239, 68, 68, 0.3);
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
       }
       .toast.out {
         transform: translateY(-8px);
@@ -282,7 +289,7 @@
       }
       footer {
         margin-top: 14px;
-        color: #6b7785;
+        color: var(--muted);
         font-size: 12px;
         display: flex;
         justify-content: space-between;
@@ -292,13 +299,19 @@
       form {
         margin: 0;
       }
+      a {
+        color: #60a5fa;
+      }
+      a:hover {
+        color: #93bbfc;
+      }
       .linkbtn {
-        border: 1px solid #d7dde4;
+        border: 1px solid var(--border);
         background: rgba(15, 23, 42, 0.6);
         color: var(--text);
         border-radius: 6px;
         padding: 10px 13px;
-        font-size: 15px;
+        font-size: 14px;
         cursor: pointer;
         text-decoration: none;
         line-height: 1.2;
@@ -312,23 +325,29 @@
       a.linkbtn:visited,
       a.linkbtn:active {
         text-decoration: none;
+        color: var(--text);
       }
       .linkbtn:hover {
-        background: #f7f9fb;
+        background: rgba(255, 255, 255, 0.08);
       }
       .linkbtn.edit {
-        border-color: rgba(27, 103, 177, 0.35);
-        background: rgba(27, 103, 177, 0.08);
-        color: var(--primary-700);
+        border-color: rgba(16, 185, 129, 0.3);
+        background: rgba(16, 185, 129, 0.1);
+        color: #34d399;
       }
       .linkbtn.edit:hover {
-        background: rgba(27, 103, 177, 0.12);
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
       }
       .linkbtn.primary {
-        border-color: #14579b;
+        border: 1px solid var(--border);
         background: var(--primary);
         color: #fff;
         font-weight: 600;
+      }
+      a.linkbtn.primary,
+      a.linkbtn.primary:hover {
+        color: #fff;
       }
       .linkbtn.primary:hover {
         background: var(--primary-700);
@@ -347,17 +366,19 @@
       }
 
       dialog {
-        border: none;
+        border: 1px solid var(--border);
+        background: #1e293b;
+        color: var(--text);
         border-radius: 10px;
         padding: 0;
         width: min(980px, calc(100vw - 24px));
-        box-shadow: 0 18px 50px rgba(16, 24, 40, 0.28);
+        box-shadow: var(--shadow);
       }
       dialog::backdrop {
-        background: rgba(15, 23, 42, 0.55);
+        background: rgba(0, 0, 0, 0.6);
       }
       .modal {
-        background: rgba(15, 23, 42, 0.6);
+        background: transparent;
       }
       .modal-header {
         display: flex;
@@ -370,19 +391,19 @@
       .modal-title {
         font-weight: 700;
         font-size: 18px;
-        color: #1f2a37;
+        color: var(--text);
       }
       .modal-close {
-        border: 1px solid #d7dde4;
+        border: 1px solid var(--border);
         background: rgba(15, 23, 42, 0.6);
-        color: #1f2a37;
+        color: var(--text);
         border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 12px;
+        padding: 10px 13px;
+        font-size: 14px;
         cursor: pointer;
       }
       .modal-close:hover {
-        background: #f7f9fb;
+        background: rgba(255, 255, 255, 0.08);
       }
       .modal-body {
         padding: 0;
@@ -392,7 +413,7 @@
         justify-content: end;
         gap: 10px;
         padding: 12px 14px 14px;
-        border-top: 1px solid #edf1f5;
+        border-top: 1px solid var(--border);
       }
 
       #addForm.form-grid {
@@ -408,31 +429,17 @@
 
       .actions {
         display: flex;
-        align-items: center;
         gap: 10px;
+        align-items: center;
         flex-wrap: wrap;
       }
       .actions form {
         display: inline;
       }
-      /* table-contrast-fix */
-      table { border-collapse: collapse; width: 100%; }
-      th { color: #94a3b8; }
-      td { color: #cbd5e1; }
-      tbody tr { border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-      tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.04); }
-      tbody tr:nth-child(odd) { background: transparent; }
-      tbody tr:hover { background: rgba(255, 255, 255, 0.08); }
-      a { color: #60a5fa; }
-      a:hover { color: #93bbfc; }
-      .linkbtn { color: #10b981; }
-      .btn-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
-      .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
-      select { background: rgba(15, 23, 42, 0.6); color: #f8fafc; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 8px; }
-      select option { background: #1e293b; color: #f8fafc; }
-      input[type="date"] { background: rgba(15, 23, 42, 0.6); color: #f8fafc; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; }
-      dialog, dialog .modal-content { background: #1e293b; color: #f8fafc; border: 1px solid rgba(255,255,255,0.1); }
-      dialog::backdrop { background: rgba(0,0,0,0.6); }
+      select option {
+        background: #1e293b;
+        color: #f8fafc;
+      }
       .badge-env {
         display: inline-flex;
         align-items: center;
@@ -454,6 +461,7 @@
         color: #34d399;
         border: 1px solid rgba(16, 185, 129, 0.3);
       }
+      <%- include('../partials/autofill-dark') %>
     </style>
   </head>
   <body>
@@ -473,9 +481,7 @@
             <a class="linkbtn" href="/usuarios">Usuários</a>
           </div>
           <button class="btn-primary" type="button" onclick="openAddModal()">Adicionar lançamento</button>
-          <div class="subtitle">
-            <span class="muted"><%= lancamentos.length %> registro(s)</span>
-          </div>
+          <div class="subtitle"><%= lancamentos.length %> registro(s)</div>
           <form method="post" action="/logout">
             <button class="linkbtn" type="submit">Sair</button>
           </form>
