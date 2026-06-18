@@ -1,5 +1,5 @@
 FROM node:20-alpine
-RUN apk add --no-cache curl tar bash git && \
+RUN apk add --no-cache curl tar bash git openssh-client && \
     curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-26.1.1.tgz | tar -xz -C /tmp && \
     mv /tmp/docker/docker /usr/local/bin/docker && \
     rm -rf /tmp/docker && \
@@ -11,5 +11,5 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-EXPOSE 8080
+EXPOSE 3000
 CMD ["node", "server.js"]

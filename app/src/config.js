@@ -37,7 +37,7 @@ function parseDbUrl(raw) {
 }
 
 const config = {
-  port: parseInt(process.env.PORT || '8080', 10),
+  port: parseInt(process.env.PORT || '3000', 10),
   appEnv: process.env.APP_ENV || 'Produção',
   sessionSecret: process.env.SESSION_SECRET || 'lancamento-dev-secret',
   db: parseDbUrl(process.env.DATABASE_URL || process.env.DB_URL),

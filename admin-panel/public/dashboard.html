@@ -453,57 +453,88 @@
     </div>
 
     <div class="grid">
-      <!-- Painel de Status dos Containers -->
-      <div class="card">
-        <div class="card-title">
-          <span>Status do Ambiente Docker</span>
-        </div>
-        <div class="status-list">
-          <div class="status-item">
-            <div class="status-name">
-              <span>🖥️</span>
-              <span>Painel Admin (CI/CD)</span>
-            </div>
-            <span class="status-badge badge-running" id="status-admin">Running</span>
+      <!-- Coluna Esquerda -->
+      <div style="display:flex; flex-direction:column; gap:1.5rem;">
+        <!-- Painel de Status dos Containers -->
+        <div class="card">
+          <div class="card-title">
+            <span>Status do Ambiente Docker</span>
           </div>
-          <div class="status-item">
-            <div class="status-name">
-              <span>🧪</span>
-              <span>Homologação App</span>
+          <div class="status-list">
+            <div class="status-item">
+              <div class="status-name">
+                <span>🖥️</span>
+                <span>Painel Admin (CI/CD)</span>
+              </div>
+              <span class="status-badge badge-running" id="status-admin">Running</span>
             </div>
-            <span class="status-badge" id="status-homolog-app">Checking...</span>
+            <div class="status-item">
+              <div class="status-name">
+                <span>🧪</span>
+                <span>Homologação App</span>
+              </div>
+              <span class="status-badge" id="status-homolog-app">Checking...</span>
+            </div>
+            <div class="status-item">
+              <div class="status-name">
+                <span>💾</span>
+                <span>Homologação Banco (PgSQL)</span>
+              </div>
+              <span class="status-badge" id="status-homolog-db">Checking...</span>
+            </div>
+            <div class="status-item">
+              <div class="status-name">
+                <span>🚀</span>
+                <span>Produção App</span>
+              </div>
+              <span class="status-badge" id="status-prod-app">Checking...</span>
+            </div>
+            <div class="status-item">
+              <div class="status-name">
+                <span>💾</span>
+                <span>Produção Banco (PgSQL)</span>
+              </div>
+              <span class="status-badge" id="status-prod-db">Checking...</span>
+            </div>
           </div>
-          <div class="status-item">
-            <div class="status-name">
-              <span>💾</span>
-              <span>Homologação Banco (PgSQL)</span>
-            </div>
-            <span class="status-badge" id="status-homolog-db">Checking...</span>
-          </div>
-          <div class="status-item">
-            <div class="status-name">
-              <span>🚀</span>
-              <span>Produção App</span>
-            </div>
-            <span class="status-badge" id="status-prod-app">Checking...</span>
-          </div>
-          <div class="status-item">
-            <div class="status-name">
-              <span>💾</span>
-              <span>Produção Banco (PgSQL)</span>
-            </div>
-            <span class="status-badge" id="status-prod-db">Checking...</span>
+
+          <div class="action-buttons">
+            <button id="btn-start-all" class="btn btn-primary">Iniciar Tudo</button>
+            <button id="btn-stop-all" class="btn btn-danger">Parar Tudo</button>
+            <a href="http://177.44.248.120:8081" target="_blank" class="btn btn-secondary" style="text-decoration:none; justify-content:center;">Abrir Homologação</a>
+            <a href="http://177.44.248.120:8082" target="_blank" class="btn btn-secondary" style="text-decoration:none; justify-content:center;">Abrir Produção</a>
+            <button id="btn-db-sync" class="btn btn-accent full-width">Sincronizar Dados (Prod ➔ Homolog)</button>
           </div>
         </div>
 
-        <div class="action-buttons">
-          <button id="btn-start-all" class="btn btn-primary">Iniciar Tudo</button>
-          <button id="btn-stop-all" class="btn btn-danger">Parar Tudo</button>
-          <a href="http://177.44.248.120:8081" target="_blank" class="btn btn-secondary" style="text-decoration:none; justify-content:center;">Abrir Homologação</a>
-          <a href="http://177.44.248.120:8082" target="_blank" class="btn btn-secondary" style="text-decoration:none; justify-content:center;">Abrir Produção</a>
+        <!-- Controle de Versão (Git) -->
+        <div class="card">
+          <div class="card-title">
+            <span>Controle de Versão (Git)</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:0.75rem;">
+            <div class="status-item" style="flex-direction:column; align-items:flex-start; gap:0.5rem; background:rgba(255,255,255,0.01);">
+              <div style="display:flex; justify-content:space-between; width:100%; font-weight:500;">
+                <span>Hash do Commit:</span>
+                <span id="git-commit-hash" style="font-family:'Fira Code', monospace; color:#34d399; font-weight:600;">------</span>
+              </div>
+              <div style="font-size:0.9rem; margin-top:0.25rem; display:flex; justify-content:space-between; width:100%; align-items:center;">
+                <span>Sincronização:</span>
+                <span id="git-status-label" class="status-badge badge-updating">Checking...</span>
+              </div>
+              <div id="git-status-details" style="font-size:0.85rem; color:var(--text-muted); line-height:1.4; margin-top:0.25rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.5rem; width:100%;">
+                Verificando sincronização com o repositório remoto...
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-top:0.5rem;">
+              <button id="btn-git-check" class="btn btn-secondary">Buscar Atualizações</button>
+              <button id="btn-git-pull" class="btn btn-accent">Puxar do Git (Pull)</button>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Coluna Direita -->
       <!-- Controle de Mudança (Fase A) -->
       <div class="card">
         <div class="card-title">
@@ -573,6 +604,7 @@
     const btnRunCi = document.getElementById('btn-run-ci');
     const btnDeployHomolog = document.getElementById('btn-deploy-homolog');
     const btnDeployProd = document.getElementById('btn-deploy-prod');
+    const btnDbSync = document.getElementById('btn-db-sync');
 
     const authorInput = document.getElementById('change-author');
     const descInput = document.getElementById('change-desc');
@@ -583,6 +615,13 @@
     const confirmModal = document.getElementById('confirm-modal');
     const btnConfirmCancel = document.getElementById('btn-confirm-cancel');
     const btnConfirmOk = document.getElementById('btn-confirm-ok');
+
+    // Git DOM
+    const gitCommitHash = document.getElementById('git-commit-hash');
+    const gitStatusLabel = document.getElementById('git-status-label');
+    const gitStatusDetails = document.getElementById('git-status-details');
+    const btnGitCheck = document.getElementById('btn-git-check');
+    const btnGitPull = document.getElementById('btn-git-pull');
 
     // Stats
     const statTests = document.getElementById('stat-tests');
@@ -787,10 +826,95 @@
       runPipeline('deploy-prod');
     });
 
+    // Funções e Listeners de Git e DB Sync
+    async function updateGitStatus() {
+      gitStatusLabel.className = 'status-badge badge-updating';
+      gitStatusLabel.textContent = 'CHECKING...';
+      try {
+        const res = await fetch('/api/git-status');
+        const data = await res.json();
+        
+        gitCommitHash.textContent = data.currentCommit || '------';
+        gitStatusDetails.textContent = data.details || '';
+        
+        gitStatusLabel.className = 'status-badge';
+        if (data.status === 'synchronized') {
+          gitStatusLabel.textContent = 'ATUALIZADO';
+          gitStatusLabel.classList.add('badge-running');
+        } else if (data.status === 'behind') {
+          gitStatusLabel.textContent = 'DESATUALIZADO';
+          gitStatusLabel.classList.add('badge-stopped');
+        } else if (data.status === 'ahead') {
+          gitStatusLabel.textContent = 'COMMIT LOCAL';
+          gitStatusLabel.classList.add('badge-updating');
+        } else {
+          gitStatusLabel.textContent = 'DIVERGENTE';
+          gitStatusLabel.classList.add('badge-stopped');
+        }
+      } catch (err) {
+        gitStatusLabel.className = 'status-badge badge-stopped';
+        gitStatusLabel.textContent = 'ERRO';
+        gitStatusDetails.textContent = `Erro ao ler status do Git: ${err.message}`;
+      }
+    }
+
+    btnGitCheck.addEventListener('click', async () => {
+      appendTerminal('info', 'Buscando atualizações no Git remoto...');
+      btnGitCheck.disabled = true;
+      await updateGitStatus();
+      btnGitCheck.disabled = false;
+      appendTerminal('success', 'Status do Git atualizado.');
+    });
+
+    btnGitPull.addEventListener('click', async () => {
+      if (!confirm('Deseja puxar as últimas atualizações do Git remoto para esta VM?')) return;
+      appendTerminal('info', 'Executando git pull na VM...');
+      btnGitPull.disabled = true;
+      try {
+        const res = await fetch('/api/git-pull', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          appendTerminal('success', 'Git pull executado com sucesso!');
+          if (data.stdout) appendTerminal('log', data.stdout);
+          await updateGitStatus();
+        } else {
+          appendTerminal('error', `Falha no git pull: ${data.error}`);
+          if (data.stderr) appendTerminal('log', data.stderr);
+        }
+      } catch (err) {
+        appendTerminal('error', `Erro ao executar git pull: ${err.message}`);
+      } finally {
+        btnGitPull.disabled = false;
+      }
+    });
+
+    btnDbSync.addEventListener('click', async () => {
+      if (!confirm('ATENÇÃO: Isso irá apagar todos os dados de Homologação e copiá-los diretamente de Produção. Deseja continuar?')) return;
+      
+      appendTerminal('info', 'Iniciando sincronização de dados (Produção ➔ Homologação)...');
+      btnDbSync.disabled = true;
+      try {
+        const res = await fetch('/api/db-sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          appendTerminal('success', 'Sincronização de dados concluída com sucesso!');
+        } else {
+          appendTerminal('error', `Falha na sincronização de dados: ${data.error}`);
+          if (data.stderr) appendTerminal('log', data.stderr);
+        }
+      } catch (err) {
+        appendTerminal('error', `Erro na sincronização de dados: ${err.message}`);
+      } finally {
+        btnDbSync.disabled = false;
+      }
+    });
+
     // Inicialização
     checkStatus();
     loadChangeLogs();
+    updateGitStatus();
     setInterval(checkStatus, 10000); // Autocheck a cada 10s
+    setInterval(updateGitStatus, 30000); // Autocheck do Git a cada 30s
   </script>
 </body>
 </html>
