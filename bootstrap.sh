@@ -14,6 +14,45 @@ if [ ! -d "/opt/lancamento/.git" ]; then
     git clone https://github.com/samanthadg/receitaedespesa.git /opt/lancamento
 fi
 
+echo "=== [0.7/5] Configurando Chave SSH para o GitHub ==="
+SSH_KEY="$HOME/.ssh/id_ed25519"
+if [ ! -f "$SSH_KEY" ]; then
+    echo "Gerando nova chave SSH..."
+    mkdir -p "$HOME/.ssh"
+    chmod 700 "$HOME/.ssh"
+    ssh-keygen -t ed25519 -N "" -f "$SSH_KEY"
+fi
+
+echo ""
+echo "======================================================="
+echo " 🔑 CHAVE SSH GERADA PARA CADASTRAR NO GITHUB: 🔑"
+echo "======================================================="
+cat "${SSH_KEY}.pub"
+echo "======================================================="
+echo "1. Copie a linha acima."
+echo "2. Cole em: https://github.com/settings/keys"
+echo "======================================================="
+echo ""
+
+# Espera o usuário adicionar a chave (funciona mesmo sob curl | bash redirecionando o tty)
+if [ -t 0 ] || [ -c /dev/tty ]; then
+    read -p "Após adicionar a chave no GitHub, pressione [ENTER] para continuar..." < /dev/tty
+else
+    echo "Modo não-interativo. Certifique-se de adicionar a chave acima no seu GitHub!"
+fi
+
+# Altera a URL remota do Git para usar SSH nas próximas operações
+cd /opt/lancamento
+git remote set-url origin git@github.com:samanthadg/receitaedespesa.git
+
+# Adiciona o GitHub nos hosts conhecidos
+mkdir -p "$HOME/.ssh"
+ssh-keyscan -t ed25519 github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || true
+
+# Testa conexão com o GitHub
+echo "Testando conexão SSH com o GitHub..."
+ssh -T -o StrictHostKeyChecking=no git@github.com 2>&1 || true
+
 echo "=== [1/5] Verificando e Instalando Docker ==="
 if ! command -v docker &> /dev/null; then
     sudo apt-get update -y
