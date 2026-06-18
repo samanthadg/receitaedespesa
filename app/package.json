@@ -30,16 +30,17 @@
   "jest": {
     "testEnvironment": "node",
     "coverageDirectory": "coverage",
-    "coverageReporters": [
-      "json-summary",
-      "text"
-    ],
+    "coverageReporters": ["json-summary", "text"],
     "collectCoverageFrom": [
       "src/**/*.js",
       "!src/db/migrate.js"
     ],
     "testMatch": [
       "**/tests/**/*.test.js"
+    ],
+    "reporters": [
+      "default",
+      "<rootDir>/tests/customReporter.js"
     ]
   }
 }

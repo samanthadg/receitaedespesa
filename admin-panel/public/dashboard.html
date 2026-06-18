@@ -496,13 +496,33 @@
           </div>
         </div>
 
-        <div class="action-buttons">
-          <button id="btn-start-all" class="btn btn-primary">Iniciar Tudo</button>
-          <button id="btn-stop-all" class="btn btn-danger">Parar Tudo</button>
-          <a href="http://177.44.248.120:8081" target="_blank" class="btn btn-secondary" style="text-decoration:none; justify-content:center;">Abrir Homologação</a>
-          <a href="http://177.44.248.120:8082" target="_blank" class="btn btn-secondary" style="text-decoration:none; justify-content:center;">Abrir Produção</a>
-          <button id="btn-db-sync" class="btn btn-accent full-width">Sincronizar Dados (Prod ➔ Homolog)</button>
+        <div style="margin-top:1.25rem; border-top:1px solid var(--border-color); padding-top:1rem;">
+          <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">Controle Global</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <button id="btn-start-all" class="btn btn-primary" style="font-size:0.85rem; padding:0.5rem; justify-content:center;">Iniciar Tudo</button>
+            <button id="btn-stop-all" class="btn btn-danger" style="font-size:0.85rem; padding:0.5rem; justify-content:center;">Parar Tudo</button>
+          </div>
         </div>
+
+        <div style="margin-top:1rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.75rem;">
+          <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">Homologação</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.5rem;">
+            <button id="btn-start-homolog" class="btn btn-secondary" style="font-size:0.85rem; padding:0.5rem; justify-content:center;">Iniciar</button>
+            <button id="btn-stop-homolog" class="btn btn-danger" style="font-size:0.85rem; padding:0.5rem; background-color:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.2); color:#f87171; justify-content:center;">Parar</button>
+          </div>
+          <a href="http://177.44.248.120:8081" target="_blank" class="btn btn-secondary" style="width:100%; text-decoration:none; justify-content:center; font-size:0.85rem; padding:0.5rem;">Abrir Homologação</a>
+        </div>
+
+        <div style="margin-top:1rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.75rem;">
+          <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">Produção</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.5rem;">
+            <button id="btn-start-prod" class="btn btn-secondary" style="font-size:0.85rem; padding:0.5rem; justify-content:center;">Iniciar</button>
+            <button id="btn-stop-prod" class="btn btn-danger" style="font-size:0.85rem; padding:0.5rem; background-color:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.2); color:#f87171; justify-content:center;">Parar</button>
+          </div>
+          <a href="http://177.44.248.120:8082" target="_blank" class="btn btn-secondary" style="width:100%; text-decoration:none; justify-content:center; font-size:0.85rem; padding:0.5rem;">Abrir Produção</a>
+        </div>
+
+        <button id="btn-db-sync" class="btn btn-accent" style="width:100%; justify-content:center; margin-top:1.25rem; font-size:0.85rem; padding:0.5rem 1rem;">Sincronizar Dados (Prod ➔ Homolog)</button>
       </div>
 
       <!-- Controle de Versão (Git) -->
@@ -574,6 +594,10 @@
     const btnRefresh = document.getElementById('btn-refresh');
     const btnStartAll = document.getElementById('btn-start-all');
     const btnStopAll = document.getElementById('btn-stop-all');
+    const btnStartHomolog = document.getElementById('btn-start-homolog');
+    const btnStopHomolog = document.getElementById('btn-stop-homolog');
+    const btnStartProd = document.getElementById('btn-start-prod');
+    const btnStopProd = document.getElementById('btn-stop-prod');
     const btnRunCi = document.getElementById('btn-run-ci');
     const btnDeployHomolog = document.getElementById('btn-deploy-homolog');
     const btnDeployProd = document.getElementById('btn-deploy-prod');
@@ -624,6 +648,10 @@
     async function checkStatus() {
       try {
         const res = await fetch('/api/status');
+        if (res.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
         const data = await res.json();
         updateBadge(statusAdmin, data.admin);
         updateBadge(statusHomologApp, data.homologApp);
@@ -658,7 +686,79 @@
 
     btnStartAll.addEventListener('click', () => controlContainers('start-all'));
     btnStopAll.addEventListener('click', () => controlContainers('stop-all'));
+    btnStartHomolog.addEventListener('click', () => controlContainers('start-homolog'));
+    btnStopHomolog.addEventListener('click', () => controlContainers('stop-homolog'));
+    btnStartProd.addEventListener('click', () => controlContainers('start-prod'));
+    btnStopProd.addEventListener('click', () => controlContainers('stop-prod'));
     btnRefresh.addEventListener('click', checkStatus);
+
+    // Tradução amigável dos testes para exibição no painel
+    const TEST_TRANSLATIONS = {
+      'login_credenciaisValidas_redirecionaParaHome': 'O redirecionamento para página home, se login válido,',
+      'login_credenciaisInvalidas_retornaMensagemDeErro': 'A exibição da mensagem de erro com credenciais inválidas,',
+      'lancamento_situacaoInvalida_lancaExcecao': 'O bloqueio de lançamento com situação inválida,',
+      'lancamento_valorZero_naoDeveSerValido': 'A validação de que lançamento com valor zero é inválido,',
+      'lancamento_tipoNulo_naoDeveSerValido': 'A validação de que lançamento com tipo nulo é inválido,',
+      'tipoLancamento_valorInvalido_lancaExcecao': 'O bloqueio de tipo de lançamento inválido no sistema,',
+      'tipoLancamento_receita_existeNoEnum': 'A validação de que o tipo de lançamento "RECEITA" é aceito pelo sistema,',
+      'situacao_efetivado_existeNoEnum': 'A validação de que a situação de lançamento "EFETIVADO" é aceita pelo sistema,',
+      'emailService_mailDesabilitado_naoEnviaEmail': 'A garantia de não envio de e-mail quando o serviço está desabilitado,',
+      'emailService_criarLancamento_enviaEmail': 'O envio de e-mail de notificação ao criar um novo lançamento,',
+      'pdfExporter_gerarPdf_naoRetornaNulo': 'A exportação e geração correta do relatório de lançamentos em PDF,',
+      'repositorio_salvarEBuscar_lancamentoEncontrado': 'A persistência e busca correta do lançamento no banco de dados,',
+      'repositorio_contarLancamentos_retornaTotalCorreto': 'A contagem total de lançamentos cadastrados no banco,',
+      'repositorio_listarPorSituacao_retornaApenasEfetivados': 'A listagem filtrada de lançamentos por situação (efetivados),',
+      'lancamento_valorNegativo_naoDeveSerValido': 'A validação de que lançamento com valor negativo é inválido,',
+      'lancamento_dataNula_naoDeveSerValido': 'A validação de que lançamento com data nula é inválido,',
+      'usuario_loginVazio_naoDeveSerValido': 'A validação de que usuário com login vazio é inválido,',
+      'usuario_emailAcimaDe160Chars_naoDeveSerValido': 'A validação de que usuário com e-mail acima de 160 caracteres é inválido,',
+      'lancamento_descricaoVazia_naoDeveSerValido': 'A validação de que lançamento com descrição vazia é inválido,',
+      'mapRow_converteCamposDoBanco': 'O mapeamento correto das colunas do banco de dados para a entidade,',
+
+      // utils.format.test.js
+      'formatDatePt formats date correctly': 'A formatação correta de data no padrão brasileiro (DD/MM/AAAA)',
+      'formatDateIso formats date correctly': 'A formatação correta de data no padrão ISO (AAAA-MM-DD)',
+      'formatDecimal formats decimal correctly': 'A formatação correta de valores decimais em padrão brasileiro',
+      'parseDateOrNull parses date correctly': 'A conversão e validação correta de strings de data para objeto de data',
+      'shallowCopyLancamento copies lancamento fields': 'A cópia superficial segura (shallow copy) de objetos de lançamento',
+      'normalizeEmail normalizes email correctly': 'A normalização correta de endereços de e-mail (remoção de espaços e nulos)',
+
+      // middleware.auth.test.js
+      'requireAuth allows access to login, css, js paths without session': 'A liberação de acesso a rotas públicas (login, CSS, JS) sem autenticação',
+      'requireAuth redirects to /login if no session exists': 'O redirecionamento automático para a página de login para rotas protegidas sem sessão',
+      'requireAuth allows access if user is authenticated in session': 'A liberação correta de acesso a rotas protegidas para usuários autenticados',
+
+      // repos.usuarioRepository.test.js
+      'mapRow returns mapped user or null': 'O mapeamento correto de linhas do banco de dados para a entidade usuário',
+      'findAll returns users sorted': 'A consulta e ordenação de todos os usuários no banco de dados',
+      'findById returns single user': 'A busca correta de usuário pelo ID no banco de dados',
+      'findByLogin returns user by login': 'A busca correta de usuário pelo login no banco de dados',
+      'findByLoginAndSenha returns user': 'A validação e busca de usuário pelo login e senha no banco de dados',
+      'save inserts new user if no id': 'A inserção de um novo usuário no banco de dados',
+      'save updates user if id exists': 'A atualização dos dados de um usuário existente no banco de dados',
+      'deleteById deletes user': 'A exclusão correta de um usuário pelo ID no banco de dados',
+
+      // repos.lancamentoRepository.test.js
+      'findAll with conditions (dataDe, dataAte, situacao) works correctly': 'A busca de lançamentos com filtros avançados (período e situação)',
+      'save updates lancamento if id exists': 'A atualização dos dados de um lançamento existente no banco de dados',
+      'deleteById executes query': 'A exclusão correta de um lançamento pelo ID no banco de dados',
+
+      // routes.usuarios.test.js
+      'GET /usuarios lists users': 'A rota de listagem de usuários cadastrados',
+      'POST /usuarios creates user successfully': 'A rota de criação de novos usuários no sistema',
+      'POST /usuarios fails if login exists': 'O bloqueio de criação de usuários com logins duplicados',
+      'GET /usuarios/:id/editar edits user': 'A rota de visualização de formulário de edição de usuário',
+      'POST /usuarios/:id updates user successfully': 'A rota de atualização de dados de usuário',
+      'POST /usuarios/:id/excluir deletes user': 'A rota de exclusão de usuários do sistema',
+
+      // routes.lancamentos.test.js
+      'GET /lancamentos lists lancamentos': 'A rota de listagem de lançamentos cadastrados',
+      'GET /lancamentos/export/pdf returns pdf file': 'A rota de geração e exportação de lançamentos em PDF',
+      'POST /lancamentos creates lancamento': 'A rota de criação de novos lançamentos no sistema',
+      'POST /lancamentos/:id/excluir deletes lancamento': 'A rota de exclusão de lançamentos do sistema',
+      'GET /lancamentos/:id/editar edits lancamento': 'A rota de visualização de formulário de edição de lançamento',
+      'POST /lancamentos/:id updates lancamento': 'A rota de atualização de dados de lançamento'
+    };
 
     // Executar Pipeline (SSE)
     function runPipeline(action) {
@@ -676,11 +776,23 @@
         const { type, data } = payload;
         
         if (type === 'log') {
+          if (action === 'ci') {
+            // Oculta os logs brutos (como npm install e comandos Jest) para exibir apenas o resultado limpo
+            return;
+          }
           // Remover caracteres ansi de cor para manter limpo
           const cleanLine = data.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
           appendTerminal('log', cleanLine);
         } else if (type === 'info') {
           appendTerminal('info', data);
+          if (action === 'ci' && data.includes('Executando testes no container')) {
+            appendTerminal('info', '=== RESULTADOS DETALHADOS DOS TESTES ===');
+          }
+        } else if (type === 'test-result') {
+          const t = data;
+          const baseDesc = TEST_TRANSLATIONS[t.name] || t.name;
+          const suffix = t.status.includes('PASSOU') ? 'passou' : (t.status.includes('FALHOU') ? 'falhou' : 'foi pulado');
+          appendTerminal('log', `${t.status} [${t.class}] ${baseDesc} ${suffix} (${t.time})`);
         } else if (type === 'success') {
           appendTerminal('success', data);
           eventSource.close();
@@ -688,6 +800,8 @@
           btnDeployHomolog.disabled = false;
           btnDeployProd.disabled = false;
           checkStatus();
+          updateGitStatus();
+          loadLastTestResults();
         } else if (type === 'error') {
           appendTerminal('error', data);
           eventSource.close();
@@ -695,6 +809,8 @@
           btnDeployHomolog.disabled = false;
           btnDeployProd.disabled = false;
           checkStatus();
+          updateGitStatus();
+          loadLastTestResults();
         } else if (type === 'stats') {
           // Atualiza as estatísticas exibidas nos cards
           statTests.textContent = data.testsRun;
@@ -702,11 +818,7 @@
           statCoverage.textContent = data.coverage;
           statSkipped.textContent = data.skipped;
           
-          if (data.testDetails && data.testDetails.length > 0) {
-            appendTerminal('info', '=== RESULTADOS DETALHADOS DOS TESTES ===');
-            data.testDetails.forEach(t => {
-              appendTerminal('log', `${t.status} [${t.class}] ${t.name} (${t.time})`);
-            });
+          if (action === 'ci') {
             appendTerminal('info', '========================================');
           }
           
@@ -756,6 +868,10 @@
       gitStatusLabel.textContent = 'CHECKING...';
       try {
         const res = await fetch('/api/git-status');
+        if (res.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
         const data = await res.json();
         
         gitCommitHash.textContent = data.currentCommit || '------';
@@ -774,6 +890,20 @@
         } else {
           gitStatusLabel.textContent = 'DIVERGENTE';
           gitStatusLabel.classList.add('badge-stopped');
+        }
+
+        // Controles de visibilidade dos botões de deploy
+        const currentCommit = data.currentCommit;
+        if (data.lastSuccessfulCI === currentCommit) {
+          btnDeployHomolog.style.display = 'inline-flex';
+        } else {
+          btnDeployHomolog.style.display = 'none';
+        }
+        
+        if (data.lastSuccessfulHomolog === currentCommit) {
+          btnDeployProd.style.display = 'inline-flex';
+        } else {
+          btnDeployProd.style.display = 'none';
         }
       } catch (err) {
         gitStatusLabel.className = 'status-badge badge-stopped';
@@ -836,6 +966,10 @@
     async function loadLastTestResults() {
       try {
         const res = await fetch('/api/test-results');
+        if (res.status === 401) {
+          window.location.href = '/login.html';
+          return;
+        }
         const data = await res.json();
         if (data && data.testsRun > 0) {
           statTests.textContent = data.testsRun;

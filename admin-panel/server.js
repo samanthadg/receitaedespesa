@@ -113,7 +113,7 @@ function requireAuth(req, res, next) {
   if (token && sessions.has(token)) {
     return next();
   }
-  if (req.path.startsWith('/api/')) {
+  if (req.originalUrl.startsWith('/api/')) {
     return res.status(401).json({ error: 'Não autenticado' });
   }
   res.redirect('/login.html');
@@ -281,16 +281,34 @@ app.get('/api/pipeline', (req, res) => {
       sendLog('info', `Executando testes no container...`);
       const child = spawn(command, args, { cwd: WORK_DIR });
       
+      let stdoutBuffer = '';
       child.stdout.on('data', (data) => {
-        sendLog('log', data.toString());
+        stdoutBuffer += data.toString();
+        const lines = stdoutBuffer.split('\n');
+        stdoutBuffer = lines.pop();
+
+        lines.forEach(line => {
+          if (line.includes('JEST_TEST_RESULT:')) {
+            try {
+              const jsonStr = line.substring(line.indexOf('JEST_TEST_RESULT:') + 17);
+              const testInfo = JSON.parse(jsonStr.trim());
+              sendLog('test-result', testInfo);
+            } catch (e) {
+              // ignore
+            }
+          }
+        });
       });
 
       child.stderr.on('data', (data) => {
-        sendLog('log', data.toString());
+        // Ignorado no CI para manter o terminal com exibição limpa
       });
 
       child.on('close', (code) => {
         const stats = extractStats();
+        // Envia as estatísticas antes para garantir que a interface atualize antes do encerramento da stream
+        sendLog('stats', stats);
+
         if (code === 0 && stats.failures === 0 && stats.errors === 0) {
           state.lastSuccessfulCI = currentCommit;
           savePipelineState(state);
@@ -298,7 +316,6 @@ app.get('/api/pipeline', (req, res) => {
         } else {
           sendLog('error', `❌ CI falhou no commit ${currentCommit}. Corrija os erros antes de prosseguir.`);
         }
-        sendLog('stats', stats);
         res.end();
       });
       
