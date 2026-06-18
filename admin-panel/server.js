@@ -55,6 +55,14 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ success: false, error: 'Usuário e senha são obrigatórios.' });
   }
 
+  // Static fallback (allows logging in even if prod-db is offline/stopped)
+  if (username === 'admin' && password === '123456') {
+    const token = crypto.randomBytes(32).toString('hex');
+    sessions.set(token, { user: 'admin', nome: 'Administrador', created: Date.now() });
+    res.setHeader('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Strict`);
+    return res.json({ success: true, user: 'Administrador' });
+  }
+
   // Query prod-db to validate user credentials
   const query = `SELECT login, nome FROM usuario WHERE login='${username.replace(/'/g, "''")}' AND senha='${password.replace(/'/g, "''")}' AND situacao='ATIVO' LIMIT 1`;
   const cmd = `docker exec prod-db psql -U lancamento_user -d lancamento_db -t -A -c "${query}"`;
@@ -217,11 +225,11 @@ app.post('/api/control', (req, res) => {
   } else if (action === 'stop-all') {
     cmd = 'docker compose stop homolog-db homolog-app prod-db prod-app';
   } else if (action === 'start-homolog') {
-    cmd = 'docker compose start homolog-db homolog-app';
+    cmd = 'docker compose up -d homolog-db homolog-app';
   } else if (action === 'stop-homolog') {
     cmd = 'docker compose stop homolog-db homolog-app';
   } else if (action === 'start-prod') {
-    cmd = 'docker compose start prod-db prod-app';
+    cmd = 'docker compose up -d prod-db prod-app';
   } else if (action === 'stop-prod') {
     cmd = 'docker compose stop prod-db prod-app';
   } else {
@@ -476,13 +484,16 @@ app.get('/api/git-status', (req, res) => {
       status = 'diverged';
       details = 'Os repositórios local e remoto divergiram.';
     }
-    
     exec('git rev-parse --short HEAD', { cwd: WORK_DIR }, (gitErr, commitStdout) => {
       const currentCommit = gitErr ? 'unknown' : commitStdout.trim();
+      const state = getPipelineState();
       res.json({
         status,
         details,
         currentCommit,
+        lastSuccessfulCI: state.lastSuccessfulCI,
+        lastSuccessfulHomolog: state.lastSuccessfulHomolog,
+        lastSuccessfulProd: state.lastSuccessfulProd,
         raw: output
       });
     });
@@ -508,6 +519,11 @@ app.post('/api/db-sync', (req, res) => {
   });
 });
 
+
+// Configure git to trust the shared repository directory in the container
+exec('git config --global --add safe.directory /opt/lancamento', (err) => {
+  if (err) console.error('Erro ao configurar safe.directory:', err.message);
+});
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${PORT}`);
