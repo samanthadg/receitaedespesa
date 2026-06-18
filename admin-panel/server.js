@@ -5,11 +5,35 @@ const path = require('path');
 const crypto = require('crypto');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 const WORK_DIR = '/opt/lancamento';
 const CHANGE_LOG_PATH = path.join(WORK_DIR, 'change_log.json');
+const PIPELINE_STATE_PATH = path.join(WORK_DIR, 'pipeline_state.json');
 
 const sessions = new Map();
+
+function getPipelineState() {
+  if (fs.existsSync(PIPELINE_STATE_PATH)) {
+    try {
+      return JSON.parse(fs.readFileSync(PIPELINE_STATE_PATH, 'utf8'));
+    } catch (e) {
+      // ignore
+    }
+  }
+  return {
+    lastSuccessfulCI: null,
+    lastSuccessfulHomolog: null,
+    lastSuccessfulProd: null
+  };
+}
+
+function savePipelineState(state) {
+  try {
+    fs.writeFileSync(PIPELINE_STATE_PATH, JSON.stringify(state, null, 2), 'utf8');
+  } catch (e) {
+    // ignore
+  }
+}
 
 app.use(express.json());
 
@@ -163,7 +187,11 @@ app.post('/api/change-log', (req, res) => {
   logs.push(newLog);
   fs.writeFileSync(CHANGE_LOG_PATH, JSON.stringify(logs, null, 2), 'utf8');
 
-  res.json({ success: true, log: newLog });
+  // Automate Git commit to record code changes & versioning automatically (Fase C)
+  const commitMsg = `Fase A: Registro de mudança por ${author || 'desenvolvedor'} - ${description}`;
+  exec(`git add . && git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: WORK_DIR }, (gitErr, gitStdout, gitStderr) => {
+    res.json({ success: true, log: newLog, gitStatus: gitErr ? 'no-changes-or-error' : 'committed' });
+  });
 });
 
 // Endpoint obter mudanças registradas
@@ -210,7 +238,7 @@ app.post('/api/control', (req, res) => {
 
 // Endpoint SSE para streaming do pipeline de CI/CD e testes
 app.get('/api/pipeline', (req, res) => {
-  const { action } = req.query; // 'ci' (build + test + pmd), 'deploy-homolog', 'deploy-prod'
+  const { action } = req.query; // 'ci', 'deploy-homolog', 'deploy-prod'
   
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -221,69 +249,117 @@ app.get('/api/pipeline', (req, res) => {
     res.write(`data: ${JSON.stringify({ type, data })}\n\n`);
   };
 
-  let child;
-  
-  if (action === 'ci') {
-    sendLog('info', '🔄 Iniciando pipeline de CI (Instalação, Testes e Cobertura)...');
-    
-    const command = 'docker';
-    const args = [
-      'run', '--rm',
-      '-v', '/opt/lancamento/app:/workspace',
-      '-w', '/workspace',
-      'node:20-alpine',
-      'sh', '-c', 'npm ci && npm test'
-    ];
-    
-    sendLog('info', `Executando: ${command} ${args.join(' ')}`);
-    child = spawn(command, args, { cwd: WORK_DIR });
-    
-  } else if (action === 'deploy-homolog') {
-    sendLog('info', '🚀 Iniciando deploy no ambiente de Homologação...');
-    const command = 'docker';
-    const args = ['compose', 'up', '-d', '--build', 'homolog-app'];
-    
-    sendLog('info', `Executando: ${command} ${args.join(' ')}`);
-    child = spawn(command, args, { cwd: WORK_DIR });
-    
-  } else if (action === 'deploy-prod') {
-    sendLog('info', '🚀 Iniciando deploy no ambiente de Produção...');
-    const command = 'docker';
-    const args = ['compose', 'up', '-d', '--build', 'prod-app'];
-    
-    sendLog('info', `Executando: ${command} ${args.join(' ')}`);
-    child = spawn(command, args, { cwd: WORK_DIR });
-    
-  } else {
-    sendLog('error', 'Ação de pipeline inválida.');
-    return res.end();
-  }
-
-  child.stdout.on('data', (data) => {
-    sendLog('log', data.toString());
-  });
-
-  child.stderr.on('data', (data) => {
-    sendLog('log', data.toString());
-  });
-
-  child.on('close', (code) => {
-    if (code === 0) {
-      sendLog('success', `✅ Pipeline finalizado com sucesso (Código ${code}).`);
-      
-      // Se for CI, extrai as estatísticas dos testes e cobertura
-      if (action === 'ci') {
-        const stats = extractStats();
-        sendLog('stats', stats);
-      }
-    } else {
-      sendLog('error', `❌ Falha no pipeline (Código ${code}).`);
-      if (action === 'ci') {
-        const stats = extractStats();
-        sendLog('stats', stats);
-      }
+  exec('git rev-parse --short HEAD', { cwd: WORK_DIR }, (gitErr, commitStdout) => {
+    if (gitErr) {
+      sendLog('error', '❌ Erro ao ler repositório Git no servidor.');
+      return res.end();
     }
-    res.end();
+    
+    const currentCommit = commitStdout.trim();
+    const state = getPipelineState();
+
+    if (action === 'ci') {
+      sendLog('info', `🔄 Iniciando pipeline de CI para o commit: ${currentCommit}...`);
+      
+      const command = 'docker';
+      const args = [
+        'run', '--rm',
+        '-v', '/opt/lancamento/app:/workspace',
+        '-w', '/workspace',
+        'node:20-alpine',
+        'sh', '-c', 'npm ci && npm test'
+      ];
+      
+      sendLog('info', `Executando testes no container...`);
+      const child = spawn(command, args, { cwd: WORK_DIR });
+      
+      child.stdout.on('data', (data) => {
+        sendLog('log', data.toString());
+      });
+
+      child.stderr.on('data', (data) => {
+        sendLog('log', data.toString());
+      });
+
+      child.on('close', (code) => {
+        const stats = extractStats();
+        if (code === 0 && stats.failures === 0 && stats.errors === 0) {
+          state.lastSuccessfulCI = currentCommit;
+          savePipelineState(state);
+          sendLog('success', `✅ CI concluído com sucesso para o commit ${currentCommit}!`);
+        } else {
+          sendLog('error', `❌ CI falhou no commit ${currentCommit}. Corrija os erros antes de prosseguir.`);
+        }
+        sendLog('stats', stats);
+        res.end();
+      });
+      
+    } else if (action === 'deploy-homolog') {
+      if (state.lastSuccessfulCI !== currentCommit) {
+        sendLog('error', `❌ [BLOQUEADO] O commit atual (${currentCommit}) não passou nos testes de CI. Por favor, execute "Rodar Integração (CI)" com sucesso antes de fazer o deploy.`);
+        return res.end();
+      }
+
+      sendLog('info', `🚀 Iniciando deploy em Homologação para o commit: ${currentCommit}...`);
+      const command = 'docker';
+      const args = ['compose', 'up', '-d', '--build', 'homolog-app'];
+      
+      const child = spawn(command, args, { cwd: WORK_DIR });
+      
+      child.stdout.on('data', (data) => {
+        sendLog('log', data.toString());
+      });
+
+      child.stderr.on('data', (data) => {
+        sendLog('log', data.toString());
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          state.lastSuccessfulHomolog = currentCommit;
+          savePipelineState(state);
+          sendLog('success', `✅ Deploy em Homologação realizado com sucesso para o commit ${currentCommit}!`);
+        } else {
+          sendLog('error', `❌ Falha ao realizar deploy em Homologação (Código ${code}).`);
+        }
+        res.end();
+      });
+      
+    } else if (action === 'deploy-prod') {
+      if (state.lastSuccessfulHomolog !== currentCommit) {
+        sendLog('error', `❌ [BLOQUEADO] O commit atual (${currentCommit}) ainda não foi implantado em Homologação. Você deve fazer deploy em Homologação com sucesso antes de promover para a Produção.`);
+        return res.end();
+      }
+
+      sendLog('info', `🚀 Iniciando deploy em Produção para o commit: ${currentCommit}...`);
+      const command = 'docker';
+      const args = ['compose', 'up', '-d', '--build', 'prod-app'];
+      
+      const child = spawn(command, args, { cwd: WORK_DIR });
+      
+      child.stdout.on('data', (data) => {
+        sendLog('log', data.toString());
+      });
+
+      child.stderr.on('data', (data) => {
+        sendLog('log', data.toString());
+      });
+
+      child.on('close', (code) => {
+        if (code === 0) {
+          state.lastSuccessfulProd = currentCommit;
+          savePipelineState(state);
+          sendLog('success', `✅ Deploy em Produção realizado com sucesso para o commit ${currentCommit}!`);
+        } else {
+          sendLog('error', `❌ Falha ao realizar deploy em Produção (Código ${code}).`);
+        }
+        res.end();
+      });
+      
+    } else {
+      sendLog('error', 'Ação de pipeline inválida.');
+      res.end();
+    }
   });
 });
 
@@ -368,6 +444,70 @@ app.get('/api/git-log', (req, res) => {
     res.json({ log: stdout.split('\n').filter(Boolean) });
   });
 });
+
+// Endpoint para puxar alterações do Git remoto (git pull)
+app.post('/api/git-pull', (req, res) => {
+  exec('git pull', { cwd: WORK_DIR }, (err, stdout, stderr) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: err.message, stderr });
+    }
+    res.json({ success: true, stdout, stderr });
+  });
+});
+
+// Endpoint para verificar status do Git local vs remoto
+app.get('/api/git-status', (req, res) => {
+  exec('git fetch origin && git status -uno', { cwd: WORK_DIR }, (err, stdout, stderr) => {
+    if (err) {
+      return res.status(500).json({ error: err.message, stderr });
+    }
+    
+    const output = stdout.trim();
+    let status = 'synchronized';
+    let details = 'Seu repositório está atualizado com o origin/main.';
+    
+    if (output.includes('behind')) {
+      status = 'behind';
+      details = 'Há atualizações pendentes no Git remoto. Clique em "Puxar do Git" para atualizar.';
+    } else if (output.includes('ahead')) {
+      status = 'ahead';
+      details = 'Há commits locais não enviados ao Git remoto.';
+    } else if (output.includes('diverged')) {
+      status = 'diverged';
+      details = 'Os repositórios local e remoto divergiram.';
+    }
+    
+    exec('git rev-parse --short HEAD', { cwd: WORK_DIR }, (gitErr, commitStdout) => {
+      const currentCommit = gitErr ? 'unknown' : commitStdout.trim();
+      res.json({
+        status,
+        details,
+        currentCommit,
+        raw: output
+      });
+    });
+  });
+});
+
+// Endpoint para sincronizar banco de dados (Copia dados da Produção para Homologação)
+app.post('/api/db-sync', (req, res) => {
+  const dumpCmd = 'docker exec prod-db pg_dump -U lancamento_user -d lancamento_db -F c -b -v -f /tmp/prod_backup.dump';
+  const cpFromProd = 'docker cp prod-db:/tmp/prod_backup.dump /tmp/prod_backup.dump';
+  const cpToHomolog = 'docker cp /tmp/prod_backup.dump homolog-db:/tmp/prod_backup.dump';
+  const wipeHomolog = 'docker exec homolog-db psql -U lancamento_user -d lancamento_db -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO lancamento_user;"';
+  const restoreHomolog = 'docker exec homolog-db pg_restore -U lancamento_user -d lancamento_db -v /tmp/prod_backup.dump';
+  const cleanUpFiles = 'rm -f /tmp/prod_backup.dump && docker exec prod-db rm -f /tmp/prod_backup.dump && docker exec homolog-db rm -f /tmp/prod_backup.dump';
+
+  const fullCmd = `${dumpCmd} && ${cpFromProd} && ${cpToHomolog} && ${wipeHomolog} && ${restoreHomolog} && ${cleanUpFiles}`;
+
+  exec(fullCmd, (err, stdout, stderr) => {
+    if (err) {
+      return res.status(500).json({ success: false, error: err.message, stderr });
+    }
+    res.json({ success: true, stdout, stderr });
+  });
+});
+
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Servidor rodando na porta ${PORT}`);

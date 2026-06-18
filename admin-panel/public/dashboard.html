@@ -443,12 +443,12 @@
         <div class="stat-label">Passaram</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value info" id="stat-coverage">90%</div>
-        <div class="stat-label">Cobertura JaCoCo</div>
+        <div class="stat-value info" id="stat-coverage">N/A</div>
+        <div class="stat-label">Cobertura Jest</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value ok" id="stat-pmd">0</div>
-        <div class="stat-label">Avisos PMD</div>
+        <div class="stat-value ok" id="stat-skipped">0</div>
+        <div class="stat-label">Testes Pulados</div>
       </div>
     </div>
 
@@ -501,29 +501,33 @@
           <button id="btn-stop-all" class="btn btn-danger">Parar Tudo</button>
           <a href="http://177.44.248.120:8081" target="_blank" class="btn btn-secondary" style="text-decoration:none; justify-content:center;">Abrir Homologação</a>
           <a href="http://177.44.248.120:8082" target="_blank" class="btn btn-secondary" style="text-decoration:none; justify-content:center;">Abrir Produção</a>
+          <button id="btn-db-sync" class="btn btn-accent full-width">Sincronizar Dados (Prod ➔ Homolog)</button>
         </div>
       </div>
 
-      <!-- Controle de Mudança (Fase A) -->
+      <!-- Controle de Versão (Git) -->
       <div class="card">
         <div class="card-title">
-          <span>Controle de Mudanças (Fase A)</span>
+          <span>Controle de Versão (Git)</span>
         </div>
-        <div class="form-group">
-          <label for="change-author">Autor da Mudança</label>
-          <input type="text" id="change-author" class="form-control" value="univates">
-        </div>
-        <div class="form-group">
-          <label for="change-desc">Descrição da Mudança</label>
-          <input type="text" id="change-desc" class="form-control" placeholder="Ex: Criação da tabela de auditoria ou alteração do layout">
-        </div>
-        <button id="btn-register-change" class="btn btn-accent" style="width: 100%; justify-content: center; margin-bottom: 1.25rem;">Registrar Mudança</button>
-
-        <div class="card-title" style="border:none; margin-bottom:0.5rem; font-size:1.05rem; padding-bottom:0;">
-          <span>Últimos Registros</span>
-        </div>
-        <div class="change-list" id="change-list">
-          <div style="color:var(--text-muted); text-align:center; padding:1rem;">Nenhuma mudança registrada localmente.</div>
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+          <div class="status-item" style="flex-direction:column; align-items:flex-start; gap:0.5rem; background:rgba(255,255,255,0.01); height: 100%; justify-content: center;">
+            <div style="display:flex; justify-content:space-between; width:100%; font-weight:500;">
+              <span>Hash do Commit:</span>
+              <span id="git-commit-hash" style="font-family:'Fira Code', monospace; color:#34d399; font-weight:600;">------</span>
+            </div>
+            <div style="font-size:0.9rem; margin-top:0.5rem; display:flex; justify-content:space-between; width:100%; align-items:center;">
+              <span>Sincronização:</span>
+              <span id="git-status-label" class="status-badge badge-updating">Checking...</span>
+            </div>
+            <div id="git-status-details" style="font-size:0.85rem; color:var(--text-muted); line-height:1.4; margin-top:0.75rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.75rem; width:100%;">
+              Verificando sincronização com o repositório remoto...
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-top:auto; padding-top:1rem;">
+            <button id="btn-git-check" class="btn btn-secondary">Buscar Atualizações</button>
+            <button id="btn-git-pull" class="btn btn-accent">Puxar do Git (Pull)</button>
+          </div>
         </div>
       </div>
 
@@ -573,22 +577,25 @@
     const btnRunCi = document.getElementById('btn-run-ci');
     const btnDeployHomolog = document.getElementById('btn-deploy-homolog');
     const btnDeployProd = document.getElementById('btn-deploy-prod');
-
-    const authorInput = document.getElementById('change-author');
-    const descInput = document.getElementById('change-desc');
-    const btnRegisterChange = document.getElementById('btn-register-change');
-    const changeListContainer = document.getElementById('change-list');
+    const btnDbSync = document.getElementById('btn-db-sync');
 
     const terminal = document.getElementById('terminal');
     const confirmModal = document.getElementById('confirm-modal');
     const btnConfirmCancel = document.getElementById('btn-confirm-cancel');
     const btnConfirmOk = document.getElementById('btn-confirm-ok');
 
+    // Git DOM
+    const gitCommitHash = document.getElementById('git-commit-hash');
+    const gitStatusLabel = document.getElementById('git-status-label');
+    const gitStatusDetails = document.getElementById('git-status-details');
+    const btnGitCheck = document.getElementById('btn-git-check');
+    const btnGitPull = document.getElementById('btn-git-pull');
+
     // Stats
     const statTests = document.getElementById('stat-tests');
     const statPassed = document.getElementById('stat-passed');
     const statCoverage = document.getElementById('stat-coverage');
-    const statPmd = document.getElementById('stat-pmd');
+    const statSkipped = document.getElementById('stat-skipped');
 
     // Funções auxiliares
     function appendTerminal(type, text) {
@@ -627,58 +634,6 @@
         console.error(err);
       }
     }
-
-    // Carregar mudanças
-    async function loadChangeLogs() {
-      try {
-        const res = await fetch('/api/change-log');
-        const logs = await res.json();
-        changeListContainer.innerHTML = '';
-        if (logs.length === 0) {
-          changeListContainer.innerHTML = '<div style="color:var(--text-muted); text-align:center; padding:1rem;">Nenhuma mudança registrada.</div>';
-          return;
-        }
-
-        logs.reverse().forEach(log => {
-          const item = document.createElement('div');
-          item.className = 'change-item';
-          const meta = document.createElement('div');
-          meta.className = 'change-meta';
-          meta.innerHTML = `<span>Por: <b>${log.author}</b></span><span>${new Date(log.timestamp).toLocaleString()}</span>`;
-          const desc = document.createElement('div');
-          desc.className = 'change-desc';
-          desc.textContent = log.description;
-          item.appendChild(meta);
-          item.appendChild(desc);
-          changeListContainer.appendChild(item);
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    // Registrar mudança
-    btnRegisterChange.addEventListener('click', async () => {
-      const description = descInput.value.trim();
-      const author = authorInput.value.trim();
-      if (!description) return alert('Por favor, informe a descrição da mudança.');
-
-      try {
-        const res = await fetch('/api/change-log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ description, author })
-        });
-        const data = await res.json();
-        if (data.success) {
-          descInput.value = '';
-          appendTerminal('success', `Mudança registrada: "${description}"`);
-          loadChangeLogs();
-        }
-      } catch (err) {
-        appendTerminal('error', `Erro ao registrar mudança: ${err.message}`);
-      }
-    });
 
     // Controlar containers (Start/Stop)
     async function controlContainers(action) {
@@ -745,14 +700,22 @@
           statTests.textContent = data.testsRun;
           statPassed.textContent = data.testsRun - data.failures - data.errors;
           statCoverage.textContent = data.coverage;
-          statPmd.textContent = data.pmdViolations;
+          statSkipped.textContent = data.skipped;
+          
+          if (data.testDetails && data.testDetails.length > 0) {
+            appendTerminal('info', '=== RESULTADOS DETALHADOS DOS TESTES ===');
+            data.testDetails.forEach(t => {
+              appendTerminal('log', `${t.status} [${t.class}] ${t.name} (${t.time})`);
+            });
+            appendTerminal('info', '========================================');
+          }
           
           if (data.status === 'fail') {
             statPassed.className = 'stat-value fail';
-            appendTerminal('error', `Estatísticas do CI: ${data.testsRun} testes executados, ${data.failures} falhas, ${data.errors} erros. Cobertura: ${data.coverage}. PMD Violations: ${data.pmdViolations}.`);
+            appendTerminal('error', `Estatísticas do CI: ${data.testsRun} testes executados, ${data.failures} falhas, ${data.errors} erros. Cobertura: ${data.coverage}. Testes Pulados: ${data.skipped}.`);
           } else {
             statPassed.className = 'stat-value ok';
-            appendTerminal('success', `Estatísticas do CI: Todos os ${data.testsRun} testes passaram! Cobertura: ${data.coverage}. PMD Violations: ${data.pmdViolations}.`);
+            appendTerminal('success', `Estatísticas do CI: Todos os ${data.testsRun} testes passaram! Cobertura: ${data.coverage}. Testes Pulados: ${data.skipped}.`);
           }
         }
       };
@@ -787,10 +750,116 @@
       runPipeline('deploy-prod');
     });
 
+    // Funções e Listeners de Git e DB Sync
+    async function updateGitStatus() {
+      gitStatusLabel.className = 'status-badge badge-updating';
+      gitStatusLabel.textContent = 'CHECKING...';
+      try {
+        const res = await fetch('/api/git-status');
+        const data = await res.json();
+        
+        gitCommitHash.textContent = data.currentCommit || '------';
+        gitStatusDetails.textContent = data.details || '';
+        
+        gitStatusLabel.className = 'status-badge';
+        if (data.status === 'synchronized') {
+          gitStatusLabel.textContent = 'ATUALIZADO';
+          gitStatusLabel.classList.add('badge-running');
+        } else if (data.status === 'behind') {
+          gitStatusLabel.textContent = 'DESATUALIZADO';
+          gitStatusLabel.classList.add('badge-stopped');
+        } else if (data.status === 'ahead') {
+          gitStatusLabel.textContent = 'COMMIT LOCAL';
+          gitStatusLabel.classList.add('badge-updating');
+        } else {
+          gitStatusLabel.textContent = 'DIVERGENTE';
+          gitStatusLabel.classList.add('badge-stopped');
+        }
+      } catch (err) {
+        gitStatusLabel.className = 'status-badge badge-stopped';
+        gitStatusLabel.textContent = 'ERRO';
+        gitStatusDetails.textContent = `Erro ao ler status do Git: ${err.message}`;
+      }
+    }
+
+    btnGitCheck.addEventListener('click', async () => {
+      appendTerminal('info', 'Buscando atualizações no Git remoto...');
+      btnGitCheck.disabled = true;
+      await updateGitStatus();
+      btnGitCheck.disabled = false;
+      appendTerminal('success', 'Status do Git atualizado.');
+    });
+
+    btnGitPull.addEventListener('click', async () => {
+      if (!confirm('Deseja puxar as últimas atualizações do Git remoto para esta VM?')) return;
+      appendTerminal('info', 'Executando git pull na VM...');
+      btnGitPull.disabled = true;
+      try {
+        const res = await fetch('/api/git-pull', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          appendTerminal('success', 'Git pull executado com sucesso!');
+          if (data.stdout) appendTerminal('log', data.stdout);
+          await updateGitStatus();
+        } else {
+          appendTerminal('error', `Falha no git pull: ${data.error}`);
+          if (data.stderr) appendTerminal('log', data.stderr);
+        }
+      } catch (err) {
+        appendTerminal('error', `Erro ao executar git pull: ${err.message}`);
+      } finally {
+        btnGitPull.disabled = false;
+      }
+    });
+
+    btnDbSync.addEventListener('click', async () => {
+      if (!confirm('ATENÇÃO: Isso irá apagar todos os dados de Homologação e copiá-los diretamente de Produção. Deseja continuar?')) return;
+      
+      appendTerminal('info', 'Iniciando sincronização de dados (Produção ➔ Homologação)...');
+      btnDbSync.disabled = true;
+      try {
+        const res = await fetch('/api/db-sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          appendTerminal('success', 'Sincronização de dados concluída com sucesso!');
+        } else {
+          appendTerminal('error', `Falha na sincronização de dados: ${data.error}`);
+          if (data.stderr) appendTerminal('log', data.stderr);
+        }
+      } catch (err) {
+        appendTerminal('error', `Erro na sincronização de dados: ${err.message}`);
+      } finally {
+        btnDbSync.disabled = false;
+      }
+    });
+
+    async function loadLastTestResults() {
+      try {
+        const res = await fetch('/api/test-results');
+        const data = await res.json();
+        if (data && data.testsRun > 0) {
+          statTests.textContent = data.testsRun;
+          statPassed.textContent = data.testsRun - data.failures - data.errors;
+          statCoverage.textContent = data.coverage;
+          statSkipped.textContent = data.skipped;
+          
+          if (data.status === 'fail') {
+            statPassed.className = 'stat-value fail';
+          } else {
+            statPassed.className = 'stat-value ok';
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao buscar resultados dos testes:', err);
+      }
+    }
+
     // Inicialização
     checkStatus();
-    loadChangeLogs();
+    loadLastTestResults();
+    updateGitStatus();
     setInterval(checkStatus, 10000); // Autocheck a cada 10s
+    setInterval(updateGitStatus, 30000); // Autocheck do Git a cada 30s
   </script>
 </body>
 </html>

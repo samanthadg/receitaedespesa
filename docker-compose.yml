@@ -4,12 +4,13 @@ services:
       context: ./admin-panel
     container_name: lancamento-admin
     ports:
-      - "8080:8080"
+      - "8080:3000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/lancamento:/opt/lancamento
+      - /root/.ssh:/root/.ssh:ro
     environment:
-      - PORT=8080
+      - PORT=3000
     restart: always
 
   homolog-db:
@@ -30,12 +31,12 @@ services:
       context: ./app
     container_name: homolog-app
     ports:
-      - "8081:8080"
+      - "8081:3000"
     environment:
       DB_URL: jdbc:postgresql://homolog-db:5432/lancamento_db
       DB_USER: lancamento_user
       DB_PASSWORD: lancamento_pass
-      PORT: 8080
+      PORT: 3000
       APP_MAIL_ENABLED: "false"
       APP_ENV: "Homologação"
     depends_on:
@@ -60,12 +61,12 @@ services:
       context: ./app
     container_name: prod-app
     ports:
-      - "8082:8080"
+      - "8082:3000"
     environment:
       DB_URL: jdbc:postgresql://prod-db:5432/lancamento_db
       DB_USER: lancamento_user
       DB_PASSWORD: lancamento_pass
-      PORT: 8080
+      PORT: 3000
       APP_MAIL_ENABLED: "false"
       APP_ENV: "Produção"
     depends_on:
