@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel de Controle DevOps - Lançamentos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --primary: #10b981;
+      --primary-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --warning: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent: #6366f1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at top right, #1e1b4b, var(--bg-dark));
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+    }
+
+    .logo-container h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #34d399, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-container p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 0.25rem;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: #fff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background-color: var(--danger-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-accent {
+      background-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-accent:hover:not(:disabled) {
+      background-color: #4f46e5;
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .status-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    .status-name {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+    }
+
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-running {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-stopped {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .badge-updating {
+      background-color: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .full-width {
+      grid-column: span 2;
+    }
+
+    /* Terminal Console Style */
+    .console-card {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 900px) {
+      .console-card {
+        grid-column: span 1;
+      }
+    }
+
+    .terminal {
+      background: #090d16;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      height: 350px;
+      overflow-y: auto;
+      color: #38bdf8;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .terminal-line {
+      white-space: pre-wrap;
+      line-height: 1.4;
+    }
+
+    .terminal-info { color: #38bdf8; }
+    .terminal-log { color: #e2e8f0; }
+    .terminal-success { color: #4ade80; font-weight: 600; }
+    .terminal-error { color: #f87171; font-weight: 600; }
+
+    /* Stats container */
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .stats-container {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .stat-card {
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .stat-card:hover {
+      background: rgba(30, 41, 59, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value.ok { color: #34d399; }
+    .stat-value.fail { color: #f87171; }
+    .stat-value.info { color: #60a5fa; }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Change Log List */
+    .change-list {
+      max-height: 250px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .change-item {
+      padding: 0.75rem 1rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    .change-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .change-desc {
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    /* Modais e Alertas */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      padding: 2rem;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      transform: scale(0.95);
+      transition: transform 0.3s;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+
+    .modal-body {
+      margin-bottom: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <h1>Painel Integrado DevOps</h1>
+        <p>Ambientes Relacionados: Integração, Homologação e Produção</p>
+      </div>
+      <div>
+        <button id="btn-refresh" class="btn btn-secondary">Atualizar Status</button>
+      </div>
+    </header>
+
+    <!-- Estatísticas dos Testes de Integração -->
+    <div class="stats-container">
+      <div class="stat-card">
+        <div class="stat-value info" id="stat-tests">20</div>
+        <div class="stat-label">Testes Unitários</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value ok" id="stat-passed">20</div>
+        <div class="stat-label">Passaram</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value info" id="stat-coverage">N/A</div>
+        <div class="stat-label">Cobertura Jest</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value ok" id="stat-skipped">0</div>
+        <div class="stat-label">Testes Pulados</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Painel de Status dos Containers -->
+      <div class="card">
+        <div class="card-title">
+          <span>Status do Ambiente Docker</span>
+        </div>
+        <div class="status-list">
+          <div class="status-item">
+            <div class="status-name">
+              <span>🖥️</span>
+              <span>Painel Admin (CI/CD)</span>
+            </div>
+            <span class="status-badge badge-running" id="status-admin">Running</span>
+          </div>
+          <div class="status-item">
+            <div class="status-name">
+              <span>🧪</span>
+              <span>Homologação App</span>
+            </div>
+            <span class="status-badge" id="status-homolog-app">Checking...</span>
+          </div>
+          <div class="status-item">
+            <div class="status-name">
+              <span>💾</span>
+              <span>Homologação Banco (PgSQL)</span>
+            </div>
+            <span class="status-badge" id="status-homolog-db">Checking...</span>
+          </div>
+          <div class="status-item">
+            <div class="status-name">
+              <span>🚀</span>
+              <span>Produção App</span>
+            </div>
+            <span class="status-badge" id="status-prod-app">Checking...</span>
+          </div>
+          <div class="status-item">
+            <div class="status-name">
+              <span>💾</span>
+              <span>Produção Banco (PgSQL)</span>
+            </div>
+            <span class="status-badge" id="status-prod-db">Checking...</span>
+          </div>
+        </div>
+
+        <div style="margin-top:1.25rem; border-top:1px solid var(--border-color); padding-top:1rem;">
+          <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">Controle Global</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+            <button id="btn-start-all" class="btn btn-primary" style="font-size:0.85rem; padding:0.5rem; justify-content:center;">Iniciar Tudo</button>
+            <button id="btn-stop-all" class="btn btn-danger" style="font-size:0.85rem; padding:0.5rem; justify-content:center;">Parar Tudo</button>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.75rem;">
+          <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">Homologação</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.5rem;">
+            <button id="btn-start-homolog" class="btn btn-secondary" style="font-size:0.85rem; padding:0.5rem; justify-content:center;">Iniciar</button>
+            <button id="btn-stop-homolog" class="btn btn-danger" style="font-size:0.85rem; padding:0.5rem; background-color:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.2); color:#f87171; justify-content:center;">Parar</button>
+          </div>
+          <a href="http://177.44.248.120:8081" target="_blank" class="btn btn-secondary" style="width:100%; text-decoration:none; justify-content:center; font-size:0.85rem; padding:0.5rem;">Abrir Homologação</a>
+        </div>
+
+        <div style="margin-top:1rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.75rem;">
+          <div style="font-size:0.85rem; color:var(--text-muted); font-weight:600; margin-bottom:0.5rem; text-transform:uppercase; letter-spacing:0.05em;">Produção</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.5rem;">
+            <button id="btn-start-prod" class="btn btn-secondary" style="font-size:0.85rem; padding:0.5rem; justify-content:center;">Iniciar</button>
+            <button id="btn-stop-prod" class="btn btn-danger" style="font-size:0.85rem; padding:0.5rem; background-color:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.2); color:#f87171; justify-content:center;">Parar</button>
+          </div>
+          <a href="http://177.44.248.120:8082" target="_blank" class="btn btn-secondary" style="width:100%; text-decoration:none; justify-content:center; font-size:0.85rem; padding:0.5rem;">Abrir Produção</a>
+        </div>
+
+        <button id="btn-db-sync" class="btn btn-accent" style="width:100%; justify-content:center; margin-top:1.25rem; font-size:0.85rem; padding:0.5rem 1rem;">Sincronizar Dados (Prod ➔ Homolog)</button>
+      </div>
+
+      <!-- Controle de Versão (Git) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Controle de Versão (Git)</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+          <div class="status-item" style="flex-direction:column; align-items:flex-start; gap:0.5rem; background:rgba(255,255,255,0.01); height: 100%; justify-content: center;">
+            <div style="display:flex; justify-content:space-between; width:100%; font-weight:500;">
+              <span>Hash do Commit:</span>
+              <span id="git-commit-hash" style="font-family:'Fira Code', monospace; color:#34d399; font-weight:600;">------</span>
+            </div>
+            <div style="font-size:0.9rem; margin-top:0.5rem; display:flex; justify-content:space-between; width:100%; align-items:center;">
+              <span>Sincronização:</span>
+              <span id="git-status-label" class="status-badge badge-updating">Checking...</span>
+            </div>
+            <div id="git-status-details" style="font-size:0.85rem; color:var(--text-muted); line-height:1.4; margin-top:0.75rem; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.75rem; width:100%;">
+              Verificando sincronização com o repositório remoto...
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:0.75rem; margin-top:auto; padding-top:1rem;">
+            <button id="btn-git-check" class="btn btn-secondary">Buscar Atualizações</button>
+            <button id="btn-git-pull" class="btn btn-accent">Puxar do Git (Pull)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pipeline de Integração (CI/CD) -->
+      <div class="card console-card">
+        <div class="card-title">
+          <span>Pipeline e Automação de Ambientes</span>
+          <div style="display:flex; gap:0.75rem;">
+            <button id="btn-run-ci" class="btn btn-primary">Rodar Integração (CI)</button>
+            <button id="btn-deploy-homolog" class="btn btn-accent">Deploy Homologação</button>
+            <button id="btn-deploy-prod" class="btn btn-danger">Deploy Produção</button>
+          </div>
+        </div>
+        
+        <div class="terminal" id="terminal">
+          <div class="terminal-line terminal-info">> Console de Logs do Pipeline carregado. Pronto para execução.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmação Deploy Produção -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal">
+      <div class="modal-header">Promover para Produção?</div>
+      <div class="modal-body">
+        Você está prestes a promover as alterações do ambiente de **Homologação** para **Produção**. Certifique-se de que a aplicação foi devidamente testada.
+      </div>
+      <div class="modal-actions">
+        <button id="btn-confirm-cancel" class="btn btn-secondary">Cancelar</button>
+        <button id="btn-confirm-ok" class="btn btn-danger">Promover Agora</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Seletores DOM
+    const statusAdmin = document.getElementById('status-admin');
+    const statusHomologApp = document.getElementById('status-homolog-app');
+    const statusHomologDb = document.getElementById('status-homolog-db');
+    const statusProdApp = document.getElementById('status-prod-app');
+    const statusProdDb = document.getElementById('status-prod-db');
+
+    const btnRefresh = document.getElementById('btn-refresh');
+    const btnStartAll = document.getElementById('btn-start-all');
+    const btnStopAll = document.getElementById('btn-stop-all');
+    const btnStartHomolog = document.getElementById('btn-start-homolog');
+    const btnStopHomolog = document.getElementById('btn-stop-homolog');
+    const btnStartProd = document.getElementById('btn-start-prod');
+    const btnStopProd = document.getElementById('btn-stop-prod');
+    const btnRunCi = document.getElementById('btn-run-ci');
+    const btnDeployHomolog = document.getElementById('btn-deploy-homolog');
+    const btnDeployProd = document.getElementById('btn-deploy-prod');
+    const btnDbSync = document.getElementById('btn-db-sync');
+
+    const terminal = document.getElementById('terminal');
+    const confirmModal = document.getElementById('confirm-modal');
+    const btnConfirmCancel = document.getElementById('btn-confirm-cancel');
+    const btnConfirmOk = document.getElementById('btn-confirm-ok');
+
+    // Git DOM
+    const gitCommitHash = document.getElementById('git-commit-hash');
+    const gitStatusLabel = document.getElementById('git-status-label');
+    const gitStatusDetails = document.getElementById('git-status-details');
+    const btnGitCheck = document.getElementById('btn-git-check');
+    const btnGitPull = document.getElementById('btn-git-pull');
+
+    // Stats
+    const statTests = document.getElementById('stat-tests');
+    const statPassed = document.getElementById('stat-passed');
+    const statCoverage = document.getElementById('stat-coverage');
+    const statSkipped = document.getElementById('stat-skipped');
+
+    // Funções auxiliares
+    function appendTerminal(type, text) {
+      const line = document.createElement('div');
+      line.className = `terminal-line terminal-${type}`;
+      line.textContent = `> ${text}`;
+      terminal.appendChild(line);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function updateBadge(el, state) {
+      el.className = 'status-badge';
+      if (state === 'running') {
+        el.textContent = 'Running';
+        el.classList.add('badge-running');
+      } else if (state === 'stopped') {
+        el.textContent = 'Stopped';
+        el.classList.add('badge-stopped');
+      } else {
+        el.textContent = 'Checking...';
+        el.classList.add('badge-updating');
+      }
+    }
+
+    // Refresh Status
+    async function checkStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        updateBadge(statusAdmin, data.admin);
+        updateBadge(statusHomologApp, data.homologApp);
+        updateBadge(statusHomologDb, data.homologDb);
+        updateBadge(statusProdApp, data.prodApp);
+        updateBadge(statusProdDb, data.prodDb);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Controlar containers (Start/Stop)
+    async function controlContainers(action) {
+      appendTerminal('info', `Executando comando ${action}...`);
+      try {
+        const res = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action })
+        });
+        const data = await res.json();
+        if (data.success) {
+          appendTerminal('success', `Sucesso ao executar ${action}`);
+          checkStatus();
+        } else {
+          appendTerminal('error', `Falha ao executar ${action}: ${data.error}`);
+        }
+      } catch (err) {
+        appendTerminal('error', `Erro ao executar ${action}: ${err.message}`);
+      }
+    }
+
+    btnStartAll.addEventListener('click', () => controlContainers('start-all'));
+    btnStopAll.addEventListener('click', () => controlContainers('stop-all'));
+    btnStartHomolog.addEventListener('click', () => controlContainers('start-homolog'));
+    btnStopHomolog.addEventListener('click', () => controlContainers('stop-homolog'));
+    btnStartProd.addEventListener('click', () => controlContainers('start-prod'));
+    btnStopProd.addEventListener('click', () => controlContainers('stop-prod'));
+    btnRefresh.addEventListener('click', checkStatus);
+
+    // Executar Pipeline (SSE)
+    function runPipeline(action) {
+      terminal.innerHTML = '';
+      appendTerminal('info', `Conectando ao canal de streaming do pipeline (${action})...`);
+      
+      const eventSource = new EventSource(`/api/pipeline?action=${action}`);
+      
+      btnRunCi.disabled = true;
+      btnDeployHomolog.disabled = true;
+      btnDeployProd.disabled = true;
+
+      eventSource.onmessage = function(event) {
+        const payload = JSON.parse(event.data);
+        const { type, data } = payload;
+        
+        if (type === 'log') {
+          // Remover caracteres ansi de cor para manter limpo
+          const cleanLine = data.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+          appendTerminal('log', cleanLine);
+        } else if (type === 'info') {
+          appendTerminal('info', data);
+        } else if (type === 'success') {
+          appendTerminal('success', data);
+          eventSource.close();
+          btnRunCi.disabled = false;
+          btnDeployHomolog.disabled = false;
+          btnDeployProd.disabled = false;
+          checkStatus();
+          updateGitStatus();
+        } else if (type === 'error') {
+          appendTerminal('error', data);
+          eventSource.close();
+          btnRunCi.disabled = false;
+          btnDeployHomolog.disabled = false;
+          btnDeployProd.disabled = false;
+          checkStatus();
+          updateGitStatus();
+        } else if (type === 'stats') {
+          // Atualiza as estatísticas exibidas nos cards
+          statTests.textContent = data.testsRun;
+          statPassed.textContent = data.testsRun - data.failures - data.errors;
+          statCoverage.textContent = data.coverage;
+          statSkipped.textContent = data.skipped;
+          
+          if (data.testDetails && data.testDetails.length > 0) {
+            appendTerminal('info', '=== RESULTADOS DETALHADOS DOS TESTES ===');
+            data.testDetails.forEach(t => {
+              appendTerminal('log', `${t.status} [${t.class}] ${t.name} (${t.time})`);
+            });
+            appendTerminal('info', '========================================');
+          }
+          
+          if (data.status === 'fail') {
+            statPassed.className = 'stat-value fail';
+            appendTerminal('error', `Estatísticas do CI: ${data.testsRun} testes executados, ${data.failures} falhas, ${data.errors} erros. Cobertura: ${data.coverage}. Testes Pulados: ${data.skipped}.`);
+          } else {
+            statPassed.className = 'stat-value ok';
+            appendTerminal('success', `Estatísticas do CI: Todos os ${data.testsRun} testes passaram! Cobertura: ${data.coverage}. Testes Pulados: ${data.skipped}.`);
+          }
+        }
+      };
+
+      eventSource.onerror = function() {
+        appendSourceError();
+      };
+      
+      function appendSourceError() {
+        appendTerminal('error', 'Ocorreu um erro na conexão SSE.');
+        eventSource.close();
+        btnRunCi.disabled = false;
+        btnDeployHomolog.disabled = false;
+        btnDeployProd.disabled = false;
+      }
+    }
+
+    btnRunCi.addEventListener('click', () => runPipeline('ci'));
+    btnDeployHomolog.addEventListener('click', () => runPipeline('deploy-homolog'));
+    
+    // Modal de Produção
+    btnDeployProd.addEventListener('click', () => {
+      confirmModal.classList.add('active');
+    });
+
+    btnConfirmCancel.addEventListener('click', () => {
+      confirmModal.classList.remove('active');
+    });
+
+    btnConfirmOk.addEventListener('click', () => {
+      confirmModal.classList.remove('active');
+      runPipeline('deploy-prod');
+    });
+
+    // Funções e Listeners de Git e DB Sync
+    async function updateGitStatus() {
+      gitStatusLabel.className = 'status-badge badge-updating';
+      gitStatusLabel.textContent = 'CHECKING...';
+      try {
+        const res = await fetch('/api/git-status');
+        const data = await res.json();
+        
+        gitCommitHash.textContent = data.currentCommit || '------';
+        gitStatusDetails.textContent = data.details || '';
+        
+        gitStatusLabel.className = 'status-badge';
+        if (data.status === 'synchronized') {
+          gitStatusLabel.textContent = 'ATUALIZADO';
+          gitStatusLabel.classList.add('badge-running');
+        } else if (data.status === 'behind') {
+          gitStatusLabel.textContent = 'DESATUALIZADO';
+          gitStatusLabel.classList.add('badge-stopped');
+        } else if (data.status === 'ahead') {
+          gitStatusLabel.textContent = 'COMMIT LOCAL';
+          gitStatusLabel.classList.add('badge-updating');
+        } else {
+          gitStatusLabel.textContent = 'DIVERGENTE';
+          gitStatusLabel.classList.add('badge-stopped');
+        }
+
+        // Controles de visibilidade dos botões de deploy
+        const currentCommit = data.currentCommit;
+        if (data.lastSuccessfulCI === currentCommit) {
+          btnDeployHomolog.style.display = 'inline-flex';
+        } else {
+          btnDeployHomolog.style.display = 'none';
+        }
+        
+        if (data.lastSuccessfulHomolog === currentCommit) {
+          btnDeployProd.style.display = 'inline-flex';
+        } else {
+          btnDeployProd.style.display = 'none';
+        }
+      } catch (err) {
+        gitStatusLabel.className = 'status-badge badge-stopped';
+        gitStatusLabel.textContent = 'ERRO';
+        gitStatusDetails.textContent = `Erro ao ler status do Git: ${err.message}`;
+      }
+    }
+
+    btnGitCheck.addEventListener('click', async () => {
+      appendTerminal('info', 'Buscando atualizações no Git remoto...');
+      btnGitCheck.disabled = true;
+      await updateGitStatus();
+      btnGitCheck.disabled = false;
+      appendTerminal('success', 'Status do Git atualizado.');
+    });
+
+    btnGitPull.addEventListener('click', async () => {
+      if (!confirm('Deseja puxar as últimas atualizações do Git remoto para esta VM?')) return;
+      appendTerminal('info', 'Executando git pull na VM...');
+      btnGitPull.disabled = true;
+      try {
+        const res = await fetch('/api/git-pull', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          appendTerminal('success', 'Git pull executado com sucesso!');
+          if (data.stdout) appendTerminal('log', data.stdout);
+          await updateGitStatus();
+        } else {
+          appendTerminal('error', `Falha no git pull: ${data.error}`);
+          if (data.stderr) appendTerminal('log', data.stderr);
+        }
+      } catch (err) {
+        appendTerminal('error', `Erro ao executar git pull: ${err.message}`);
+      } finally {
+        btnGitPull.disabled = false;
+      }
+    });
+
+    btnDbSync.addEventListener('click', async () => {
+      if (!confirm('ATENÇÃO: Isso irá apagar todos os dados de Homologação e copiá-los diretamente de Produção. Deseja continuar?')) return;
+      
+      appendTerminal('info', 'Iniciando sincronização de dados (Produção ➔ Homologação)...');
+      btnDbSync.disabled = true;
+      try {
+        const res = await fetch('/api/db-sync', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          appendTerminal('success', 'Sincronização de dados concluída com sucesso!');
+        } else {
+          appendTerminal('error', `Falha na sincronização de dados: ${data.error}`);
+          if (data.stderr) appendTerminal('log', data.stderr);
+        }
+      } catch (err) {
+        appendTerminal('error', `Erro na sincronização de dados: ${err.message}`);
+      } finally {
+        btnDbSync.disabled = false;
+      }
+    });
+
+    async function loadLastTestResults() {
+      try {
+        const res = await fetch('/api/test-results');
+        const data = await res.json();
+        if (data && data.testsRun > 0) {
+          statTests.textContent = data.testsRun;
+          statPassed.textContent = data.testsRun - data.failures - data.errors;
+          statCoverage.textContent = data.coverage;
+          statSkipped.textContent = data.skipped;
+          
+          if (data.status === 'fail') {
+            statPassed.className = 'stat-value fail';
+          } else {
+            statPassed.className = 'stat-value ok';
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao buscar resultados dos testes:', err);
+      }
+    }
+
+    // Inicialização
+    checkStatus();
+    loadLastTestResults();
+    updateGitStatus();
+    setInterval(checkStatus, 10000); // Autocheck a cada 10s
+    setInterval(updateGitStatus, 30000); // Autocheck do Git a cada 30s
+  </script>
+</body>
+</html>
