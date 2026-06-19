@@ -8,7 +8,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /opt/lancamento:/opt/lancamento
-      - /root/.ssh:/root/.ssh:ro
+      - /home/univates/.ssh:/root/.ssh:ro
     environment:
       - PORT=3000
     restart: always
