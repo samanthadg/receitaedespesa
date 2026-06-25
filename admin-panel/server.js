@@ -310,6 +310,16 @@ app.get('/api/pipeline', (req, res) => {
     if (action === 'ci') {
       sendLog('info', `Iniciando pipeline de CI para o commit: ${currentCommit}...`);
 
+      // Limpa resultados anteriores para evitar exibicao de dados obsoletos
+      const coverageSummary = path.join(WORK_DIR, 'app/coverage/coverage-summary.json');
+      const jestResults = path.join(WORK_DIR, 'app/coverage/jest-results.json');
+      try {
+        if (fs.existsSync(coverageSummary)) fs.unlinkSync(coverageSummary);
+        if (fs.existsSync(jestResults)) fs.unlinkSync(jestResults);
+      } catch (e) {
+        // ignore
+      }
+
       // Etapa 1/3: Verificacao de Ambiente
       sendLog('info', 'Etapa 1/3: Verificando ambiente e infraestrutura...');
 
@@ -385,16 +395,32 @@ app.get('/api/pipeline', (req, res) => {
         const child = spawn(command, args, { cwd: WORK_DIR });
 
         let stdoutBuffer = '';
-        child.stdout.on('data', (data) => {
-          stdoutBuffer += data.toString();
-          const lines = stdoutBuffer.split('\n');
-          stdoutBuffer = lines.pop();
+        let stderrBuffer = '';
+        let currentStep = 'install';
+        const installOutput = [];
+        const lintOutput = [];
+        const testOutput = [];
 
-          lines.forEach(line => {
-            if (line.includes('ESLINT_PASSED')) {
-              sendLog('info', 'Qualidade do codigo verificada com sucesso (ESLint passou).');
-              sendLog('info', 'Etapa 3/3: Executando testes com Jest...');
-            }
+        const handleLine = (line) => {
+          const trimmed = line.trim();
+          if (!trimmed) return;
+
+          if (line.includes('npm run lint') || line.includes('eslint')) {
+            currentStep = 'lint';
+          }
+          if (line.includes('ESLINT_PASSED')) {
+            currentStep = 'test';
+            sendLog('info', 'Qualidade do codigo verificada com sucesso (ESLint passou).');
+            sendLog('info', 'Etapa 3/3: Executando testes com Jest...');
+            return;
+          }
+
+          if (currentStep === 'install') {
+            installOutput.push(line);
+          } else if (currentStep === 'lint') {
+            lintOutput.push(line);
+            sendLog('info', line);
+          } else if (currentStep === 'test') {
             if (line.includes('JEST_TEST_RESULT:')) {
               try {
                 const jsonStr = line.substring(line.indexOf('JEST_TEST_RESULT:') + 17);
@@ -403,15 +429,30 @@ app.get('/api/pipeline', (req, res) => {
               } catch (e) {
                 // ignore
               }
+            } else {
+              testOutput.push(line);
             }
-          });
+          }
+        };
+
+        child.stdout.on('data', (data) => {
+          stdoutBuffer += data.toString();
+          const lines = stdoutBuffer.split('\n');
+          stdoutBuffer = lines.pop();
+          lines.forEach(handleLine);
         });
 
         child.stderr.on('data', (data) => {
-          // Ignorado no CI para manter o terminal com exibição limpa
+          stderrBuffer += data.toString();
+          const lines = stderrBuffer.split('\n');
+          stderrBuffer = lines.pop();
+          lines.forEach(handleLine);
         });
 
         child.on('close', (code) => {
+          if (stdoutBuffer) handleLine(stdoutBuffer);
+          if (stderrBuffer) handleLine(stderrBuffer);
+
           const stats = extractStats();
           sendLog('stats', stats);
 
@@ -420,6 +461,21 @@ app.get('/api/pipeline', (req, res) => {
             savePipelineState(state);
             sendLog('success', `CI concluido com sucesso para o commit ${currentCommit}!`);
           } else {
+            if (currentStep === 'install') {
+              sendLog('info', '=== ERRO NA INSTALACAO DE DEPENDENCIAS ===');
+              installOutput.slice(-20).forEach(line => sendLog('info', line));
+            } else if (currentStep === 'lint') {
+              sendLog('info', '=== ERRO NA VALIDACAO DO LINTER (ESLint) ===');
+              // As ESLint errors are already printed in real-time, print a small separator
+            } else if (currentStep === 'test') {
+              sendLog('info', '=== DETALHES DAS FALHAS DOS TESTES (Jest) ===');
+              testOutput.forEach(line => {
+                const cleanLine = line.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+                if (cleanLine.trim()) {
+                  sendLog('info', cleanLine);
+                }
+              });
+            }
             sendLog('error', `CI falhou no commit ${currentCommit}. Corrija os erros antes de prosseguir.`);
           }
           res.end();
