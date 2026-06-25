@@ -454,6 +454,9 @@ app.get('/api/pipeline', (req, res) => {
           if (stderrBuffer) handleLine(stderrBuffer);
 
           const stats = extractStats();
+          if (code !== 0) {
+            stats.status = 'fail';
+          }
           sendLog('stats', stats);
 
           if (code === 0 && stats.failures === 0 && stats.errors === 0) {
