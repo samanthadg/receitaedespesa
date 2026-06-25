@@ -443,10 +443,6 @@
         <div class="stat-label">Passaram</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value info" id="stat-coverage">N/A</div>
-        <div class="stat-label">Cobertura Jest</div>
-      </div>
-      <div class="stat-card">
         <div class="stat-value ok" id="stat-skipped">0</div>
         <div class="stat-label">Testes Pulados</div>
       </div>
@@ -555,10 +551,10 @@
       <div class="card console-card">
         <div class="card-title">
           <span>Pipeline e Automação de Ambientes</span>
-          <div style="display:flex; gap:0.75rem;">
-            <button id="btn-run-ci" class="btn btn-primary">Rodar Integração (CI)</button>
-            <button id="btn-deploy-homolog" class="btn btn-accent">Deploy Homologação</button>
-            <button id="btn-deploy-prod" class="btn btn-danger">Deploy Produção</button>
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+            <button id="btn-run-ci" class="btn btn-primary">Rodar Integracao (CI)</button>
+            <button id="btn-deploy-homolog" class="btn btn-accent">Deploy Homologacao</button>
+            <button id="btn-deploy-prod" class="btn btn-danger">Deploy Producao</button>
           </div>
         </div>
         
@@ -618,7 +614,6 @@
     // Stats
     const statTests = document.getElementById('stat-tests');
     const statPassed = document.getElementById('stat-passed');
-    const statCoverage = document.getElementById('stat-coverage');
     const statSkipped = document.getElementById('stat-skipped');
 
     // Funções auxiliares
@@ -663,9 +658,19 @@
       }
     }
 
+    const ACTION_COMMANDS = {
+      'start-all': 'docker compose up -d',
+      'stop-all': 'docker compose stop homolog-db homolog-app prod-db prod-app',
+      'start-homolog': 'docker compose up -d homolog-db homolog-app',
+      'stop-homolog': 'docker compose stop homolog-db homolog-app',
+      'start-prod': 'docker compose up -d prod-db prod-app',
+      'stop-prod': 'docker compose stop prod-db prod-app'
+    };
+
     // Controlar containers (Start/Stop)
     async function controlContainers(action) {
-      appendTerminal('info', `Executando comando ${action}...`);
+      const cmd = ACTION_COMMANDS[action] || '';
+      appendTerminal('info', `Executando: ${cmd}`);
       try {
         const res = await fetch('/api/control', {
           method: 'POST',
@@ -674,13 +679,13 @@
         });
         const data = await res.json();
         if (data.success) {
-          appendTerminal('success', `Sucesso ao executar ${action}`);
+          appendTerminal('success', `Sucesso ao executar comando no servidor.`);
           checkStatus();
         } else {
-          appendTerminal('error', `Falha ao executar ${action}: ${data.error}`);
+          appendTerminal('error', `Falha ao executar comando: ${data.error}`);
         }
       } catch (err) {
-        appendTerminal('error', `Erro ao executar ${action}: ${err.message}`);
+        appendTerminal('error', `Erro ao executar comando: ${err.message}`);
       }
     }
 
@@ -690,7 +695,10 @@
     btnStopHomolog.addEventListener('click', () => controlContainers('stop-homolog'));
     btnStartProd.addEventListener('click', () => controlContainers('start-prod'));
     btnStopProd.addEventListener('click', () => controlContainers('stop-prod'));
-    btnRefresh.addEventListener('click', checkStatus);
+    btnRefresh.addEventListener('click', () => {
+      appendTerminal('info', 'Executando: docker ps --format "{{.Names}}:{{.Status}}"');
+      checkStatus();
+    });
 
     // Tradução amigável dos testes para exibição no painel
     const TEST_TRANSLATIONS = {
@@ -815,7 +823,6 @@
           // Atualiza as estatísticas exibidas nos cards
           statTests.textContent = data.testsRun;
           statPassed.textContent = data.testsRun - data.failures - data.errors;
-          statCoverage.textContent = data.coverage;
           statSkipped.textContent = data.skipped;
           
           if (action === 'ci') {
@@ -824,10 +831,10 @@
           
           if (data.status === 'fail') {
             statPassed.className = 'stat-value fail';
-            appendTerminal('error', `Estatísticas do CI: ${data.testsRun} testes executados, ${data.failures} falhas, ${data.errors} erros. Cobertura: ${data.coverage}. Testes Pulados: ${data.skipped}.`);
+            appendTerminal('error', `Estatísticas do CI: ${data.testsRun} testes executados, ${data.failures} falhas, ${data.errors} erros. Testes Pulados: ${data.skipped}.`);
           } else {
             statPassed.className = 'stat-value ok';
-            appendTerminal('success', `Estatísticas do CI: Todos os ${data.testsRun} testes passaram! Cobertura: ${data.coverage}. Testes Pulados: ${data.skipped}.`);
+            appendTerminal('success', `Estatísticas do CI: Todos os ${data.testsRun} testes passaram! Testes Pulados: ${data.skipped}.`);
           }
         }
       };
@@ -913,7 +920,7 @@
     }
 
     btnGitCheck.addEventListener('click', async () => {
-      appendTerminal('info', 'Buscando atualizações no Git remoto...');
+      appendTerminal('info', 'Executando: git fetch origin && git status -uno');
       btnGitCheck.disabled = true;
       await updateGitStatus();
       btnGitCheck.disabled = false;
@@ -922,7 +929,7 @@
 
     btnGitPull.addEventListener('click', async () => {
       if (!confirm('Deseja puxar as últimas atualizações do Git remoto para esta VM?')) return;
-      appendTerminal('info', 'Executando git pull na VM...');
+      appendTerminal('info', 'Executando: git pull');
       btnGitPull.disabled = true;
       try {
         const res = await fetch('/api/git-pull', { method: 'POST' });
@@ -945,7 +952,14 @@
     btnDbSync.addEventListener('click', async () => {
       if (!confirm('ATENÇÃO: Isso irá apagar todos os dados de Homologação e copiá-los diretamente de Produção. Deseja continuar?')) return;
       
-      appendTerminal('info', 'Iniciando sincronização de dados (Produção ➔ Homologação)...');
+      appendTerminal('info', 'Executando sequencia de comandos para sincronizacao do banco de dados:');
+      appendTerminal('info', '  1. docker exec prod-db pg_dump -U lancamento_user -d lancamento_db -F c -b -v -f /tmp/prod_backup.dump');
+      appendTerminal('info', '  2. docker cp prod-db:/tmp/prod_backup.dump /tmp/prod_backup.dump');
+      appendTerminal('info', '  3. docker cp /tmp/prod_backup.dump homolog-db:/tmp/prod_backup.dump');
+      appendTerminal('info', '  4. docker exec homolog-db psql -U lancamento_user -d lancamento_db -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO lancamento_user;"');
+      appendTerminal('info', '  5. docker exec homolog-db pg_restore -U lancamento_user -d lancamento_db -v /tmp/prod_backup.dump');
+      appendTerminal('info', '  6. rm -f /tmp/prod_backup.dump && docker exec prod-db rm -f /tmp/prod_backup.dump && docker exec homolog-db rm -f /tmp/prod_backup.dump');
+      
       btnDbSync.disabled = true;
       try {
         const res = await fetch('/api/db-sync', { method: 'POST' });
@@ -974,7 +988,6 @@
         if (data && data.testsRun > 0) {
           statTests.textContent = data.testsRun;
           statPassed.textContent = data.testsRun - data.failures - data.errors;
-          statCoverage.textContent = data.coverage;
           statSkipped.textContent = data.skipped;
           
           if (data.status === 'fail') {

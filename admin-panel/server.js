@@ -35,6 +35,41 @@ function savePipelineState(state) {
   }
 }
 
+function getExpectedVersions() {
+  const versions = {
+    node: '20',
+    postgres: '18'
+  };
+
+  const dockerfilePath = path.join(WORK_DIR, 'app/Dockerfile');
+  if (fs.existsSync(dockerfilePath)) {
+    try {
+      const content = fs.readFileSync(dockerfilePath, 'utf8');
+      const match = content.match(/FROM\s+node:(\d+)/i);
+      if (match && match[1]) {
+        versions.node = match[1];
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const composePath = path.join(WORK_DIR, 'docker-compose.yml');
+  if (fs.existsSync(composePath)) {
+    try {
+      const content = fs.readFileSync(composePath, 'utf8');
+      const match = content.match(/image:\s+postgres:(\d+)/i);
+      if (match && match[1]) {
+        versions.postgres = match[1];
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  return versions;
+}
+
 app.use(express.json());
 
 // Parse cookies
@@ -51,12 +86,15 @@ app.use((req, res, next) => {
 // Login endpoint - validates against production database
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
+  console.log(`[LOGIN] Tentativa de login para usuario: ${username}`);
+
   if (!username || !password) {
     return res.status(400).json({ success: false, error: 'Usuário e senha são obrigatórios.' });
   }
 
   // Static fallback (allows logging in even if prod-db is offline/stopped)
   if (username === 'admin' && password === '123456') {
+    console.log(`[LOGIN] Login de fallback estatico bem-sucedido para o admin`);
     const token = crypto.randomBytes(32).toString('hex');
     sessions.set(token, { user: 'admin', nome: 'Administrador', created: Date.now() });
     res.setHeader('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Strict`);
@@ -67,7 +105,9 @@ app.post('/api/login', (req, res) => {
   const query = `SELECT login, nome FROM usuario WHERE login='${username.replace(/'/g, "''")}' AND senha='${password.replace(/'/g, "''")}' AND situacao='ATIVO' LIMIT 1`;
   const cmd = `docker exec prod-db psql -U lancamento_user -d lancamento_db -t -A -c "${query}"`;
 
+  console.log(`[LOGIN] Executando comando: ${cmd}`);
   exec(cmd, { timeout: 5000 }, (err, stdout, stderr) => {
+    console.log(`[LOGIN] Resultado da consulta: err=${err ? err.message : 'null'}, stdout=${stdout.trim()}, stderr=${stderr.trim()}`);
     if (err) {
       return res.status(500).json({ success: false, error: 'Erro ao conectar com o banco de produção.' });
     }
@@ -113,7 +153,7 @@ function requireAuth(req, res, next) {
   if (token && sessions.has(token)) {
     return next();
   }
-  if (req.originalUrl.startsWith('/api/')) {
+  if (req.path.startsWith('/api/')) {
     return res.status(401).json({ error: 'Não autenticado' });
   }
   res.redirect('/login.html');
@@ -257,9 +297,10 @@ app.get('/api/pipeline', (req, res) => {
     res.write(`data: ${JSON.stringify({ type, data })}\n\n`);
   };
 
+  sendLog('info', 'Executando: git rev-parse --short HEAD');
   exec('git rev-parse --short HEAD', { cwd: WORK_DIR }, (gitErr, commitStdout) => {
     if (gitErr) {
-      sendLog('error', '❌ Erro ao ler repositório Git no servidor.');
+      sendLog('error', 'Erro ao ler repositório Git no servidor.');
       return res.end();
     }
     
@@ -267,68 +308,135 @@ app.get('/api/pipeline', (req, res) => {
     const state = getPipelineState();
 
     if (action === 'ci') {
-      sendLog('info', `🔄 Iniciando pipeline de CI para o commit: ${currentCommit}...`);
-      
-      const command = 'docker';
-      const args = [
-        'run', '--rm',
-        '-v', '/opt/lancamento/app:/workspace',
-        '-w', '/workspace',
-        'node:20-alpine',
-        'sh', '-c', 'npm ci && npm test'
-      ];
-      
-      sendLog('info', `Executando testes no container...`);
-      const child = spawn(command, args, { cwd: WORK_DIR });
-      
-      let stdoutBuffer = '';
-      child.stdout.on('data', (data) => {
-        stdoutBuffer += data.toString();
-        const lines = stdoutBuffer.split('\n');
-        stdoutBuffer = lines.pop();
+      sendLog('info', `Iniciando pipeline de CI para o commit: ${currentCommit}...`);
 
-        lines.forEach(line => {
-          if (line.includes('JEST_TEST_RESULT:')) {
-            try {
-              const jsonStr = line.substring(line.indexOf('JEST_TEST_RESULT:') + 17);
-              const testInfo = JSON.parse(jsonStr.trim());
-              sendLog('test-result', testInfo);
-            } catch (e) {
-              // ignore
+      // Etapa 1/3: Verificacao de Ambiente
+      sendLog('info', 'Etapa 1/3: Verificando ambiente e infraestrutura...');
+
+      const envScriptCmd = 'bash /opt/lancamento/scripts/env-check.sh';
+      const expected = getExpectedVersions();
+
+      sendLog('info', `Executando: ${envScriptCmd}`);
+      exec(envScriptCmd, { timeout: 60000 }, (envErr, envStdout) => {
+        // Exibe resultados da verificação de ambiente com validação de versões
+        const envLines = (envStdout || '').split('\n').filter(l => l.trim());
+        let currentSection = '';
+        let hasVersionMismatch = false;
+
+        envLines.forEach(line => {
+          let outputLine = line;
+
+          if (line.startsWith('[Node] Versao:')) {
+            currentSection = 'node';
+          } else if (line.startsWith('[PostgreSQL] Homolog:')) {
+            currentSection = 'pg-homolog';
+          } else if (line.startsWith('[PostgreSQL] Producao:')) {
+            currentSection = 'pg-prod';
+          } else if (line.startsWith('[') && line.includes(']')) {
+            currentSection = '';
+          }
+
+          if (currentSection === 'node' && line.startsWith('v')) {
+            const match = line.match(/^v(\d+)\./);
+            if (match && match[1]) {
+              const nodeVer = match[1];
+              if (nodeVer === expected.node) {
+                outputLine = `  ${line} [OK - Compativel com Dockerfile v${expected.node}]`;
+              } else {
+                outputLine = `  ${line} [FALHOU - Requer v${expected.node} do Dockerfile]`;
+                hasVersionMismatch = true;
+              }
+            }
+          } else if ((currentSection === 'pg-homolog' || currentSection === 'pg-prod') && line.includes('PostgreSQL')) {
+            const match = line.match(/PostgreSQL\)\s+(\d+)\./);
+            if (match && match[1]) {
+              const pgVer = match[1];
+              if (pgVer === expected.postgres) {
+                outputLine = `  ${line} [OK - Compativel com docker-compose v${expected.postgres}]`;
+              } else {
+                outputLine = `  ${line} [FALHOU - Requer v${expected.postgres} do docker-compose]`;
+                hasVersionMismatch = true;
+              }
             }
           }
+
+          sendLog('info', outputLine);
+        });
+
+        if (envErr || hasVersionMismatch) {
+          sendLog('info', 'Aviso: alguns checks de ambiente falharam, prosseguindo com CI...');
+        } else {
+          sendLog('info', 'Ambiente verificado com sucesso.');
+        }
+
+        // Etapa 2/3: ESLint
+        sendLog('info', 'Etapa 2/3: Verificando qualidade do codigo com ESLint...');
+
+        const command = 'docker';
+        const args = [
+          'run', '--rm',
+          '-v', '/opt/lancamento/app:/workspace',
+          '-w', '/workspace',
+          'node:20-alpine',
+          'sh', '-c', 'npm ci && npm run lint && echo "ESLINT_PASSED" && npm test'
+        ];
+
+        sendLog('info', 'Executando: docker run --rm -v /opt/lancamento/app:/workspace -w /workspace node:20-alpine sh -c "npm ci && npm run lint && echo \\"ESLINT_PASSED\\" && npm test"');
+        const child = spawn(command, args, { cwd: WORK_DIR });
+
+        let stdoutBuffer = '';
+        child.stdout.on('data', (data) => {
+          stdoutBuffer += data.toString();
+          const lines = stdoutBuffer.split('\n');
+          stdoutBuffer = lines.pop();
+
+          lines.forEach(line => {
+            if (line.includes('ESLINT_PASSED')) {
+              sendLog('info', 'Qualidade do codigo verificada com sucesso (ESLint passou).');
+              sendLog('info', 'Etapa 3/3: Executando testes com Jest...');
+            }
+            if (line.includes('JEST_TEST_RESULT:')) {
+              try {
+                const jsonStr = line.substring(line.indexOf('JEST_TEST_RESULT:') + 17);
+                const testInfo = JSON.parse(jsonStr.trim());
+                sendLog('test-result', testInfo);
+              } catch (e) {
+                // ignore
+              }
+            }
+          });
+        });
+
+        child.stderr.on('data', (data) => {
+          // Ignorado no CI para manter o terminal com exibição limpa
+        });
+
+        child.on('close', (code) => {
+          const stats = extractStats();
+          sendLog('stats', stats);
+
+          if (code === 0 && stats.failures === 0 && stats.errors === 0) {
+            state.lastSuccessfulCI = currentCommit;
+            savePipelineState(state);
+            sendLog('success', `CI concluido com sucesso para o commit ${currentCommit}!`);
+          } else {
+            sendLog('error', `CI falhou no commit ${currentCommit}. Corrija os erros antes de prosseguir.`);
+          }
+          res.end();
         });
       });
 
-      child.stderr.on('data', (data) => {
-        // Ignorado no CI para manter o terminal com exibição limpa
-      });
-
-      child.on('close', (code) => {
-        const stats = extractStats();
-        // Envia as estatísticas antes para garantir que a interface atualize antes do encerramento da stream
-        sendLog('stats', stats);
-
-        if (code === 0 && stats.failures === 0 && stats.errors === 0) {
-          state.lastSuccessfulCI = currentCommit;
-          savePipelineState(state);
-          sendLog('success', `✅ CI concluído com sucesso para o commit ${currentCommit}!`);
-        } else {
-          sendLog('error', `❌ CI falhou no commit ${currentCommit}. Corrija os erros antes de prosseguir.`);
-        }
-        res.end();
-      });
-      
     } else if (action === 'deploy-homolog') {
       if (state.lastSuccessfulCI !== currentCommit) {
-        sendLog('error', `❌ [BLOQUEADO] O commit atual (${currentCommit}) não passou nos testes de CI. Por favor, execute "Rodar Integração (CI)" com sucesso antes de fazer o deploy.`);
+        sendLog('error', `[BLOQUEADO] O commit atual (${currentCommit}) não passou nos testes de CI. Execute "Rodar Integração (CI)" com sucesso antes de fazer o deploy.`);
         return res.end();
       }
 
-      sendLog('info', `🚀 Iniciando deploy em Homologação para o commit: ${currentCommit}...`);
+      sendLog('info', `Iniciando deploy em Homologação para o commit: ${currentCommit}...`);
       const command = 'docker';
       const args = ['compose', 'up', '-d', '--build', 'homolog-app'];
       
+      sendLog('info', 'Executando: docker compose up -d --build homolog-app');
       const child = spawn(command, args, { cwd: WORK_DIR });
       
       child.stdout.on('data', (data) => {
@@ -343,23 +451,24 @@ app.get('/api/pipeline', (req, res) => {
         if (code === 0) {
           state.lastSuccessfulHomolog = currentCommit;
           savePipelineState(state);
-          sendLog('success', `✅ Deploy em Homologação realizado com sucesso para o commit ${currentCommit}!`);
+          sendLog('success', `Deploy em Homologação realizado com sucesso para o commit ${currentCommit}!`);
         } else {
-          sendLog('error', `❌ Falha ao realizar deploy em Homologação (Código ${code}).`);
+          sendLog('error', `Falha ao realizar deploy em Homologação (Código ${code}).`);
         }
         res.end();
       });
       
     } else if (action === 'deploy-prod') {
       if (state.lastSuccessfulHomolog !== currentCommit) {
-        sendLog('error', `❌ [BLOQUEADO] O commit atual (${currentCommit}) ainda não foi implantado em Homologação. Você deve fazer deploy em Homologação com sucesso antes de promover para a Produção.`);
+        sendLog('error', `[BLOQUEADO] O commit atual (${currentCommit}) ainda não foi implantado em Homologação. Faça deploy em Homologação com sucesso antes de promover para Produção.`);
         return res.end();
       }
 
-      sendLog('info', `🚀 Iniciando deploy em Produção para o commit: ${currentCommit}...`);
+      sendLog('info', `Iniciando deploy em Produção para o commit: ${currentCommit}...`);
       const command = 'docker';
       const args = ['compose', 'up', '-d', '--build', 'prod-app'];
       
+      sendLog('info', 'Executando: docker compose up -d --build prod-app');
       const child = spawn(command, args, { cwd: WORK_DIR });
       
       child.stdout.on('data', (data) => {
@@ -374,15 +483,30 @@ app.get('/api/pipeline', (req, res) => {
         if (code === 0) {
           state.lastSuccessfulProd = currentCommit;
           savePipelineState(state);
-          sendLog('success', `✅ Deploy em Produção realizado com sucesso para o commit ${currentCommit}!`);
+          sendLog('success', `Deploy em Produção realizado com sucesso para o commit ${currentCommit}!`);
         } else {
-          sendLog('error', `❌ Falha ao realizar deploy em Produção (Código ${code}).`);
+          sendLog('error', `Falha ao realizar deploy em Produção (Código ${code}).`);
         }
         res.end();
       });
       
+    } else if (action === 'env-check') {
+      sendLog('info', '=== VERIFICACAO DE AMBIENTE E INFRAESTRUTURA ===');
+
+      const envScriptCmd = 'bash /opt/lancamento/scripts/env-check.sh';
+      sendLog('info', `Executando: ${envScriptCmd}`);
+      exec(envScriptCmd, { timeout: 60000 }, (err, stdout, stderr) => {
+        const lines = (stdout || '').split('\n').filter(l => l.trim());
+        lines.forEach(line => sendLog('info', line));
+        if (err && stderr) {
+          sendLog('error', `Erro: ${stderr.trim().split('\n')[0]}`);
+        }
+        sendLog('success', 'Verificacao de ambiente concluida!');
+        res.end();
+      });
+
     } else {
-      sendLog('error', 'Ação de pipeline inválida.');
+      sendLog('error', 'Acao de pipeline invalida.');
       res.end();
     }
   });
