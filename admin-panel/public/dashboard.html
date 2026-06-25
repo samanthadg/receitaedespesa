@@ -552,7 +552,6 @@
         <div class="card-title">
           <span>Pipeline e Automação de Ambientes</span>
         <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
-            <button id="btn-env-check" class="btn btn-secondary">Verificar Ambiente</button>
             <button id="btn-run-ci" class="btn btn-primary">Rodar Integracao (CI)</button>
             <button id="btn-deploy-homolog" class="btn btn-accent">Deploy Homologacao</button>
             <button id="btn-deploy-prod" class="btn btn-danger">Deploy Producao</button>
@@ -598,7 +597,6 @@
     const btnRunCi = document.getElementById('btn-run-ci');
     const btnDeployHomolog = document.getElementById('btn-deploy-homolog');
     const btnDeployProd = document.getElementById('btn-deploy-prod');
-    const btnEnvCheck = document.getElementById('btn-env-check');
     const btnDbSync = document.getElementById('btn-db-sync');
 
     const terminal = document.getElementById('terminal');
@@ -849,7 +847,6 @@
       }
     }
 
-    btnEnvCheck.addEventListener('click', () => runPipeline('env-check'));
     btnRunCi.addEventListener('click', () => runPipeline('ci'));
     btnDeployHomolog.addEventListener('click', () => runPipeline('deploy-homolog'));
     
