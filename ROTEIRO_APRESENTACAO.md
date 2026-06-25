@@ -138,3 +138,23 @@ Demonstre a garantia de ordem e estabilidade de deploys.
    - O deploy em Produção ocorrerá de forma isolada.
 2. **Demonstração Final**:
    Acesse a URL de Produção (`http://177.44.248.120:8082`) e mostre a aplicação rodando de forma estável.
+
+---
+
+## Dica extra: Como inspecionar os Bancos de Dados via CLI (Terminal)
+
+Para verificar os dados gravados nos bancos em tempo real durante a apresentação:
+
+* **Ver o Banco de Homologação**:
+  ```bash
+  sudo docker exec -it homolog-db psql -U lancamento_user -d lancamento_db
+  ```
+* **Ver o Banco de Produção**:
+  ```bash
+  sudo docker exec -it prod-db psql -U lancamento_user -d lancamento_db
+  ```
+
+* **Listar as tabelas**: `\dt`
+* **Ver dados da tabela de lançamentos**: `SELECT * FROM lancamento;`
+* **Ver dados da tabela de usuários**: `SELECT * FROM usuario;`
+* **Sair do console**: `\q`
