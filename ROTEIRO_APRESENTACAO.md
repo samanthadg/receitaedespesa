@@ -11,9 +11,19 @@ Mostre que o controle da infraestrutura está centralizado e automatizado via Do
 1. **Derrubar tudo e limpar imagens/volumes via terminal**:
    Acesse o terminal da VM via SSH e execute os comandos para parar tudo, limpar o Docker e deletar a pasta do projeto (deixando a VM totalmente limpa):
    ```bash
-   cd /opt/lancamento
-   sudo docker compose down -v
+   # Para e remove os containers do projeto
+   cd /opt/lancamento && sudo docker compose down -v
+
+   # Força a remoção de TODOS os containers restantes (inclusive os em estado "Created")
+   sudo docker rm -f $(sudo docker ps -aq) 2>/dev/null; true
+
+   # Remove TODAS as imagens à força
+   sudo docker rmi -f $(sudo docker images -q) 2>/dev/null; true
+
+   # Remove volumes, redes e cache restantes
    sudo docker system prune -a --volumes -f
+
+   # Deleta a pasta do projeto
    cd / && sudo rm -rf /opt/lancamento
    ```
 2. **Mostrar que o Docker está totalmente limpo (sem imagens ou containers)**:
