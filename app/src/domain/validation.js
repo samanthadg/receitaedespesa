@@ -7,7 +7,7 @@ function validateLancamento(data) {
   if (!data.dataLancamento) errors.push('dataLancamento');
 
   const valor = parseFloat(data.valor);
-  if (Number.isNaN(valor) || valor < 0) errors.push('valor')
+  if (Number.isNaN(valor) || valor < 0) errors.push('valor');
 
   if (!data.tipoLancamento) errors.push('tipoLancamento');
   if (!data.situacao) errors.push('situacao');
