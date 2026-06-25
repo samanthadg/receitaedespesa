@@ -658,9 +658,20 @@
       }
     }
 
+    // Mapeamento dos comandos de controle para exibição no console
+    const CONTROL_COMMANDS = {
+      'start-all': 'docker compose up -d homolog-db homolog-app prod-db prod-app',
+      'stop-all': 'docker compose stop homolog-db homolog-app prod-db prod-app',
+      'start-homolog': 'docker compose up -d homolog-db homolog-app',
+      'stop-homolog': 'docker compose stop homolog-db homolog-app',
+      'start-prod': 'docker compose up -d prod-db prod-app',
+      'stop-prod': 'docker compose stop prod-db prod-app'
+    };
+
     // Controlar containers (Start/Stop)
     async function controlContainers(action) {
-      appendTerminal('info', `Executando comando ${action}...`);
+      const cmd = CONTROL_COMMANDS[action] || action;
+      appendTerminal('info', `Executando: ${cmd}`);
       try {
         const res = await fetch('/api/control', {
           method: 'POST',
@@ -669,13 +680,13 @@
         });
         const data = await res.json();
         if (data.success) {
-          appendTerminal('success', `Sucesso ao executar ${action}`);
+          appendTerminal('success', `Sucesso ao executar comando.`);
           checkStatus();
         } else {
-          appendTerminal('error', `Falha ao executar ${action}: ${data.error}`);
+          appendTerminal('error', `Falha ao executar comando: ${data.error}`);
         }
       } catch (err) {
-        appendTerminal('error', `Erro ao executar ${action}: ${err.message}`);
+        appendTerminal('error', `Erro ao executar comando: ${err.message}`);
       }
     }
 
@@ -948,6 +959,21 @@
       if (!confirm('ATENÇÃO: Isso irá apagar todos os dados de Homologação e copiá-los diretamente de Produção. Deseja continuar?')) return;
       
       appendTerminal('info', 'Iniciando sincronização de dados (Produção ➔ Homologação)...');
+      
+      const dumpCmd = 'docker exec prod-db pg_dump -U lancamento_user -d lancamento_db -F c -b -v -f /tmp/prod_backup.dump';
+      const cpFromProd = 'docker cp prod-db:/tmp/prod_backup.dump /tmp/prod_backup.dump';
+      const cpToHomolog = 'docker cp /tmp/prod_backup.dump homolog-db:/tmp/prod_backup.dump';
+      const wipeHomolog = 'docker exec homolog-db psql -U lancamento_user -d lancamento_db -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO lancamento_user;"';
+      const restoreHomolog = 'docker exec homolog-db pg_restore -U lancamento_user -d lancamento_db -v /tmp/prod_backup.dump';
+      const cleanUpFiles = 'rm -f /tmp/prod_backup.dump && docker exec prod-db rm -f /tmp/prod_backup.dump && docker exec homolog-db rm -f /tmp/prod_backup.dump';
+      
+      appendTerminal('info', `Executando dump de produção: ${dumpCmd}`);
+      appendTerminal('info', `Executando cópia do backup para o host: ${cpFromProd}`);
+      appendTerminal('info', `Executando cópia do backup para o container homolog-db: ${cpToHomolog}`);
+      appendTerminal('info', `Executando wipe do banco de homologação: ${wipeHomolog}`);
+      appendTerminal('info', `Executando restauração do dump: ${restoreHomolog}`);
+      appendTerminal('info', `Executando limpeza de arquivos temporários: ${cleanUpFiles}`);
+
       btnDbSync.disabled = true;
       try {
         const res = await fetch('/api/db-sync', { method: 'POST' });

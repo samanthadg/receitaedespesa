@@ -261,7 +261,7 @@ app.post('/api/control', (req, res) => {
   let cmd = '';
 
   if (action === 'start-all') {
-    cmd = 'docker compose up -d';
+    cmd = 'docker compose up -d homolog-db homolog-app prod-db prod-app';
   } else if (action === 'stop-all') {
     cmd = 'docker compose stop homolog-db homolog-app prod-db prod-app';
   } else if (action === 'start-homolog') {
