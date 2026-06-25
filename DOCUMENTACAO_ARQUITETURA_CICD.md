@@ -12,32 +12,33 @@ O sistema é implantado de forma totalmente dockerizada em uma única Máquina V
 
 ```mermaid
 graph TD
-    subgraph GitHub ["Repositório Git (GitHub)"]
-        repo["samanthadg/receitaedespesa"]
-    end
+    DEV["💻 Desenvolvedor (PC Local)"]
+    GH["☁️ GitHub\nsamanthadg/receitaedespesa"]
 
-    subgraph VM ["Máquina Virtual Ubuntu (177.44.248.120)"]
-        subgraph Docker ["Docker Compose Network"]
-            admin["lancamento-admin (Porta 8080)<br/>Painel DevOps (Node.js)"]
-            
-            subgraph Homolog ["Ambiente de Homologação"]
-                h_app["homolog-app (Porta 8081)<br/>Node.js / Express"]
-                h_db["homolog-db (Porta 5433)<br/>PostgreSQL 18"]
-                h_app -->|Conecta| h_db
-            end
+    DEV -->|"git push"| GH
 
-            subgraph Prod ["Ambiente de Produção"]
-                p_app["prod-app (Porta 8082)<br/>Node.js / Express"]
-                p_db["prod-db (Porta 5434)<br/>PostgreSQL 18"]
-                p_app -->|Conecta| p_db
-            end
+    subgraph VM["🖥️ Máquina Virtual Ubuntu — 177.44.248.120"]
+        ADMIN["🛠️ Painel DevOps :8080\nlancamento-admin — Node.js"]
+
+        subgraph HOMOLOG["Ambiente de Homologação"]
+            H_APP["📦 homolog-app :8081\nNode.js / Express"]
+            H_DB["🗄️ homolog-db :5433\nPostgreSQL 18"]
         end
+
+        subgraph PROD["Ambiente de Produção"]
+            P_APP["📦 prod-app :8082\nNode.js / Express"]
+            P_DB["🗄️ prod-db :5434\nPostgreSQL 18"]
+        end
+
+        ADMIN -->|"git pull"| ADMIN
+        ADMIN -->|"1 — ESLint + Jest CI"| ADMIN
+        ADMIN -->|"2 — Deploy Homolog"| H_APP
+        ADMIN -->|"3 — Deploy Prod"| P_APP
+        H_APP -->|"Conecta"| H_DB
+        P_APP -->|"Conecta"| P_DB
     end
 
-    repo -->|Pull| admin
-    admin -->|1. Executa CI (Linter & Jest)| admin
-    admin -->|2. Deploy Homolog| h_app
-    admin -->|3. Deploy Prod (Locker Guard)| p_app
+    GH -->|"git pull"| ADMIN
 ```
 
 ---
