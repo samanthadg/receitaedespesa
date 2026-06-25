@@ -51,7 +51,7 @@ ssh-keyscan -t ed25519 github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null || tru
 
 # Testa conexão com o GitHub
 echo "Testando conexão SSH com o GitHub..."
-ssh -T -o StrictHostKeyChecking=no git@github.com 2>&1 || true
+ssh -n -T -o StrictHostKeyChecking=no git@github.com 2>&1 || true
 
 echo "=== [1/5] Verificando e Instalando Docker ==="
 if ! command -v docker &> /dev/null; then
