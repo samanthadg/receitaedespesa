@@ -144,7 +144,8 @@
       .linkbtn:hover {
         background: rgba(255, 255, 255, 0.08);
       }
-      .linkbtn.edit {
+      .linkbtn.edit,
+      .linkbtn.edit:visited {
         border-color: rgba(16, 185, 129, 0.3);
         background: rgba(16, 185, 129, 0.1);
         color: #34d399;
@@ -296,6 +297,9 @@
         justify-content: center;
         padding: 0;
         margin: 0;
+        font-family: inherit;
+        font-size: 14px !important;
+        font-weight: 600 !important;
       }
       dialog {
         border: 1px solid var(--border);
