@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Arquitetura CI/CD — Receita & Despesa</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    font-family: 'Inter', sans-serif;
+    padding: 36px 28px 48px;
+    min-height: 100vh;
+  }
+  h1 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #2dd4bf;
+    margin-bottom: 36px;
+    letter-spacing: -0.3px;
+  }
+
+  /* ── FLOW ROW ── */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 0;
+  }
+
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    width: 44px;
+    flex-shrink: 0;
+  }
+  .arrow-shaft {
+    width: 34px;
+    height: 2px;
+    background: #2dd4bf;
+    position: relative;
+  }
+  .arrow-shaft::after {
+    content: '';
+    position: absolute;
+    right: -1px; top: -4px;
+    border-left: 8px solid #2dd4bf;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+  }
+
+  /* ── NODE CARD ── */
+  .node {
+    background: #1c2333;
+    border-radius: 14px;
+    border: 1.5px solid #2a3a4a;
+    padding: 16px 14px 14px;
+    width: 148px;
+    text-align: center;
+    box-shadow: 0 2px 14px rgba(0,0,0,.4);
+  }
+  .node .node-icon  { font-size: 28px; margin-bottom: 8px; display: block; }
+  .node .node-title { font-size: 12px; font-weight: 700; color: #e6edf3; line-height: 1.3; }
+  .node .node-sub   { font-size: 10px; color: #2dd4bf; margin-top: 5px; line-height: 1.4; }
+
+  /* integration node */
+  .node.integ { width: 172px; text-align: left; }
+  .node.integ .node-title { text-align: center; }
+  .node.integ .node-icon  { display: block; text-align: center; }
+  .node.integ .node-sub   { text-align: center; }
+  .integ-notes {
+    margin-top: 10px;
+    border-top: 1px solid #2a3a4a;
+    padding-top: 8px;
+  }
+  .integ-notes li {
+    font-size: 10px;
+    color: #94a3b8;
+    list-style: none;
+    padding: 2px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .integ-notes li::before { content: '—'; color: #2dd4bf; font-weight: 700; }
+
+  /* workspace */
+  .node.workspace { width: 162px; }
+  .desktops {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .desktop {
+    background: #0d1117;
+    border: 1px solid #2a3a4a;
+    border-radius: 6px;
+    padding: 5px 4px 4px;
+    text-align: center;
+  }
+  .desktop .d-icon  { font-size: 16px; display: block; }
+  .desktop .d-label { font-size: 8px; color: #2dd4bf; margin-top: 2px; font-weight: 500; }
+
+  /* ── VERTICAL ARROW ── */
+  .v-arrow-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+  }
+  .v-shaft {
+    width: 2px;
+    height: 32px;
+    background: #2dd4bf;
+    position: relative;
+    margin: 0 auto;
+  }
+  .v-shaft::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: -4px;
+    border-top: 8px solid #2dd4bf;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+  }
+
+  /* ── ENV ROW ── */
+  .env-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .env-card {
+    background: #1c2333;
+    border-radius: 14px;
+    border: 1.5px solid;
+    padding: 14px;
+    width: 204px;
+    box-shadow: 0 2px 14px rgba(0,0,0,.4);
+  }
+  .env-card.homolog { border-color: #2dd4bf; }
+  .env-card.prod    { border-color: #00c97a; }
+
+  .env-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+  }
+  .env-card.homolog .env-badge { background: #2dd4bf; color: #0d1117; }
+  .env-card.prod    .env-badge { background: #00c97a; color: #0d1117; }
+
+  .svc {
+    background: #0d1117;
+    border: 1px solid #2a3a4a;
+    border-radius: 8px;
+    padding: 7px 9px;
+    margin-bottom: 7px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .svc:last-child { margin-bottom: 0; }
+  .svc .s-icon { font-size: 15px; flex-shrink: 0; }
+  .svc .s-name { font-size: 11px; font-weight: 600; color: #e6edf3; }
+  .svc .s-desc { font-size: 9px; color: #64748b; margin-top: 1px; }
+  .svc .s-port {
+    margin-left: auto;
+    font-size: 10px;
+    font-family: monospace;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .env-card.homolog .s-port { background: rgba(45,212,191,.15); color: #2dd4bf; }
+  .env-card.prod    .s-port { background: rgba(0,201,122,.15);  color: #00c97a; }
+
+  /* horizontal arrow between envs */
+  .h-env-arrow {
+    display: flex;
+    align-items: center;
+    padding-top: 52px;
+    width: 44px;
+    flex-shrink: 0;
+  }
+  .h-env-shaft {
+    width: 34px;
+    height: 2px;
+    background: #00c97a;
+    position: relative;
+  }
+  .h-env-shaft::after {
+    content: '';
+    position: absolute;
+    right: -1px; top: -4px;
+    border-left: 8px solid #00c97a;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+  }
+
+  /* center column for v-arrow + env-row */
+  .bottom-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 32px;
+  }
+  .leg {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #1c2333;
+    border: 1px solid #2a3a4a;
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 10px;
+    font-weight: 500;
+    color: #94a3b8;
+  }
+  .leg-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<h1>Arquitetura CI/CD — Receita &amp; Despesa</h1>
+
+<!-- ══ TOP FLOW ══ -->
+<div class="flow-row">
+
+  <div class="node">
+    <span class="node-icon">📋</span>
+    <div class="node-title">Controle de Mudança</div>
+    <div class="node-sub">change_log.json</div>
+  </div>
+
+  <div class="flow-arrow"><div class="arrow-shaft"></div></div>
+
+  <div class="node workspace">
+    <span class="node-icon">🖥️</span>
+    <div class="node-title">Workspace local</div>
+    <div class="node-sub">VPS · /opt/lancamento</div>
+    <div class="desktops">
+      <div class="desktop"><span class="d-icon">💻</span><span class="d-label">dev</span></div>
+      <div class="desktop"><span class="d-icon">⚙️</span><span class="d-label">admin</span></div>
+      <div class="desktop"><span class="d-icon">🟦</span><span class="d-label">homolog</span></div>
+      <div class="desktop"><span class="d-icon">🟩</span><span class="d-label">prod</span></div>
+    </div>
+  </div>
+
+  <div class="flow-arrow"><div class="arrow-shaft"></div></div>
+
+  <div class="node">
+    <span class="node-icon">🔀</span>
+    <div class="node-title">Versionamento</div>
+    <div class="node-sub">Git · GitHub</div>
+  </div>
+
+  <div class="flow-arrow"><div class="arrow-shaft"></div></div>
+
+  <div class="node integ">
+    <span class="node-icon">⚙️</span>
+    <div class="node-title">Integração</div>
+    <div class="node-sub">Admin Panel · :8080</div>
+    <ul class="integ-notes">
+      <li>testes automatizados (Jest)</li>
+      <li>qualidade de código (ESLint)</li>
+      <li>build · Docker image</li>
+      <li>transf. p/ homologação</li>
+    </ul>
+  </div>
+
+</div>
+
+<!-- ══ VERTICAL ARROW + ENVS ══ -->
+<div class="bottom-col">
+  <div class="v-arrow-wrap" style="width:172px;">
+    <div class="v-shaft"></div>
+  </div>
+
+  <div class="env-row">
+    <div class="env-card homolog">
+      <span class="env-badge">Homologação</span>
+      <div class="svc">
+        <span class="s-icon">🟩</span>
+        <div><div class="s-name">homolog-app</div><div class="s-desc">Node.js 20 · Express · EJS</div></div>
+        <span class="s-port">:8081</span>
+      </div>
+      <div class="svc">
+        <span class="s-icon">🐘</span>
+        <div><div class="s-name">homolog-db</div><div class="s-desc">PostgreSQL 18 · Alpine</div></div>
+        <span class="s-port">:5433</span>
+      </div>
+      <div class="svc">
+        <span class="s-icon">🔄</span>
+        <div><div class="s-name">Migrations</div><div class="s-desc">migrate.js · V1→V2→V3</div></div>
+      </div>
+    </div>
+
+    <div class="h-env-arrow"><div class="h-env-shaft"></div></div>
+
+    <div class="env-card prod">
+      <span class="env-badge">Produção</span>
+      <div class="svc">
+        <span class="s-icon">🟩</span>
+        <div><div class="s-name">prod-app</div><div class="s-desc">Node.js 20 · Express · EJS</div></div>
+        <span class="s-port">:8082</span>
+      </div>
+      <div class="svc">
+        <span class="s-icon">🐘</span>
+        <div><div class="s-name">prod-db</div><div class="s-desc">PostgreSQL 18 · Alpine</div></div>
+        <span class="s-port">:5434</span>
+      </div>
+      <div class="svc">
+        <span class="s-icon">🔄</span>
+        <div><div class="s-name">Migrations</div><div class="s-desc">migrate.js · V1→V2→V3</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LEGEND ══ -->
+<div class="legend">
+  <div class="leg"><span class="leg-dot" style="background:#22c55e"></span>Node.js 20</div>
+  <div class="leg"><span class="leg-dot" style="background:#f97316"></span>Express 4</div>
+  <div class="leg"><span class="leg-dot" style="background:#2dd4bf"></span>EJS</div>
+  <div class="leg"><span class="leg-dot" style="background:#3b82f6"></span>PostgreSQL 18</div>
+  <div class="leg"><span class="leg-dot" style="background:#06b6d4"></span>Docker Compose</div>
+  <div class="leg"><span class="leg-dot" style="background:#f59e0b"></span>migrate.js</div>
+  <div class="leg"><span class="leg-dot" style="background:#00c97a"></span>Jest 29 · 20 testes</div>
+  <div class="leg"><span class="leg-dot" style="background:#ec4899"></span>ESLint 8</div>
+  <div class="leg"><span class="leg-dot" style="background:#e6edf3"></span>GitHub</div>
+</div>
+
+</body>
+</html>
