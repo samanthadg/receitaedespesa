@@ -918,6 +918,19 @@
         } else {
           btnDeployProd.style.display = 'none';
         }
+
+        // Desabilita sincronizacao se homologacao e producao estiverem em versoes diferentes
+        if (data.lastSuccessfulHomolog !== data.lastSuccessfulProd) {
+          btnDbSync.disabled = true;
+          btnDbSync.title = 'A sincronização de dados está desabilitada porque Homologação e Produção estão em versões (commits) diferentes.';
+          btnDbSync.style.opacity = '0.5';
+          btnDbSync.style.cursor = 'not-allowed';
+        } else {
+          btnDbSync.disabled = false;
+          btnDbSync.title = 'Sincronizar dados de Produção para Homologação';
+          btnDbSync.style.opacity = '1';
+          btnDbSync.style.cursor = 'pointer';
+        }
       } catch (err) {
         gitStatusLabel.className = 'status-badge badge-stopped';
         gitStatusLabel.textContent = 'ERRO';
@@ -987,7 +1000,7 @@
       } catch (err) {
         appendTerminal('error', `Erro na sincronização de dados: ${err.message}`);
       } finally {
-        btnDbSync.disabled = false;
+        await updateGitStatus();
       }
     });
 
