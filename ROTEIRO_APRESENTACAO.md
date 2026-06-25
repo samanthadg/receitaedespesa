@@ -52,6 +52,15 @@ Mostre que o controle da infraestrutura está centralizado e automatizado via Do
      *(Mostre os 5 containers rodando: admin, homolog-db, homolog-app, prod-db, prod-app).*
    - Mostre o Painel Admin acessível em `http://177.44.248.120:8080` e faça login com `admin` / `123456`.
 
+5. **Apresentar a aplicação funcionando em Homologação** *(Passo 4 da banca)*:
+   - Acesse no navegador: `http://177.44.248.120:8081`
+   - Faça login com `admin` / `admin123` e mostre a aplicação operacional (listagem de lançamentos, cadastro, etc.).
+
+6. **Apresentar a aplicação funcionando em Produção** *(Passo 5 da banca)*:
+   - Acesse no navegador: `http://177.44.248.120:8082`
+   - Faça login com `admin` / `admin123` e mostre a aplicação operacional.
+   - *(Neste momento ambos os ambientes estão idênticos — dados e estrutura de banco iguais.)*
+
 ---
 
 ## Passo 2: Introduzir Erro no Desenvolvimento Local (PC)
@@ -135,6 +144,20 @@ Mostre o ciclo de correção e validação no ambiente de homologação.
    - Clique em **"Deploy Homologação"**. Os logs do Docker Compose aparecerão no console em tempo real.
    - Acesse `http://177.44.248.120:8081` no navegador para provar que a Homologação foi atualizada com sucesso.
 
+6. **Apresentar a aplicação + atualizações do Banco em Homologação** *(Passo 11 da banca)*:
+   - Mostre a aplicação funcionando em `http://177.44.248.120:8081`.
+   - No terminal da VM, entre no banco de Homologação e prove que a migration foi aplicada:
+     ```bash
+     sudo docker exec -it homolog-db psql -U lancamento_user -d lancamento_db
+     ```
+     ```sql
+     \dt
+     ```
+     *(A nova tabela `teste_banca` deve aparecer na listagem — prova de que a migration rodou automaticamente no deploy.)*
+     ```sql
+     \q
+     ```
+
 ---
 
 ## Passo 5: Promover para Produção
@@ -146,8 +169,19 @@ Demonstre a garantia de ordem e estabilidade de deploys.
    - Clique em **"Deploy Produção"**.
    - Confirme a caixa de diálogo (modal de proteção).
    - O deploy em Produção ocorrerá de forma isolada.
-2. **Demonstração Final**:
-   Acesse a URL de Produção (`http://177.44.248.120:8082`) e mostre a aplicação rodando de forma estável.
+2. **Apresentar a aplicação + atualizações do Banco em Produção** *(Passo 13 da banca)*:
+   - Acesse a URL de Produção (`http://177.44.248.120:8082`) e mostre a aplicação rodando de forma estável.
+   - No terminal da VM, entre no banco de Produção e prove que a migration foi aplicada:
+     ```bash
+     sudo docker exec -it prod-db psql -U lancamento_user -d lancamento_db
+     ```
+     ```sql
+     \dt
+     ```
+     *(A mesma tabela `teste_banca` deve aparecer — confirmando que o ciclo completo Dev → Homolog → Prod funcionou.)*
+     ```sql
+     \q
+     ```
 
 ---
 
