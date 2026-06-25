@@ -65,7 +65,7 @@ A aplicação está implantada em uma Máquina Virtual na nuvem no IP **177.44.2
   * **Senha:** `123456`
 * **Aplicação Financeira (Homologação / Produção)**:
   * **Usuário:** `admin`
-  * **Senha:** `admin123`
+  * **Senha:** `123456`
 
 ---
 
